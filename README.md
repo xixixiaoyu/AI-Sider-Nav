@@ -43,12 +43,12 @@
 
 2. **安装依赖**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **构建插件**
    ```bash
-   npm run build
+   pnpm run build
    ```
 
 4. **加载到浏览器**
@@ -69,34 +69,34 @@
 ### 环境要求
 
 - Node.js >= 18
-- npm >= 8
+- pnpm >= 8
 
 ### 开发命令
 
 ```bash
 # 启动开发服务器
-npm run dev
+pnpm run dev
 
 # 构建生产版本
-npm run build
+pnpm run build
 
 # 构建并打包
-npm run build:zip
+pnpm run build:zip
 
 # 运行测试
-npm run test
+pnpm run test
 
 # 运行测试（UI 模式）
-npm run test:ui
+pnpm run test:ui
 
 # 代码检查
-npm run lint
+pnpm run lint
 
 # 格式化代码
-npm run format
+pnpm run format
 
 # 类型检查
-npm run type-check
+pnpm run type-check
 ```
 
 ### 项目结构

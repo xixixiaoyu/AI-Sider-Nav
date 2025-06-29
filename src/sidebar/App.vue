@@ -3,7 +3,7 @@
     <!-- 头部 -->
     <header class="sidebar-header">
       <div class="flex items-center gap-2">
-        <div class="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+        <div class="w-6 h-6 bg-teal-500 rounded flex items-center justify-center">
           <div class="i-carbon-chat text-white text-sm"></div>
         </div>
         <h1 class="text-sm font-semibold text-gray-800">AI 助手</h1>
@@ -114,7 +114,7 @@ const closeSidebar = () => {
 }
 
 .tab-btn.active {
-  @apply bg-blue-100 text-blue-600;
+  @apply bg-teal-100 text-teal-600;
 }
 
 .close-btn {

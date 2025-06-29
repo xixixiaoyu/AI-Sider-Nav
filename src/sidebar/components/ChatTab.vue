@@ -194,7 +194,7 @@ const formatTime = (timestamp: number) => {
 }
 
 .conversation-item.active {
-  @apply bg-blue-50 border border-blue-200;
+  @apply bg-teal-50 border border-teal-200;
 }
 
 .conversation-title {
@@ -230,7 +230,7 @@ const formatTime = (timestamp: number) => {
 }
 
 .user-message .message-avatar {
-  @apply bg-blue-500 text-white;
+  @apply bg-teal-500 text-white;
 }
 
 .message-content {
@@ -246,7 +246,7 @@ const formatTime = (timestamp: number) => {
 }
 
 .user-message .message-text {
-  @apply bg-blue-500 text-white;
+  @apply bg-teal-500 text-white;
 }
 
 .message-time {
@@ -278,11 +278,11 @@ const formatTime = (timestamp: number) => {
 }
 
 .message-input {
-  @apply flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  @apply flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent;
   max-height: 100px;
 }
 
 .send-btn {
-  @apply p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply p-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
 }
 </style>

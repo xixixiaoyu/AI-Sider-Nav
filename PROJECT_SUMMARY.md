@@ -108,32 +108,32 @@ AI-Sider-Nav/
 
 ### 安装依赖
 ```bash
-npm install
+pnpm install
 ```
 
 ### 开发模式
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### 构建插件
 ```bash
-npm run build
+pnpm run build
 ```
 
 ### 运行测试
 ```bash
-npm run test
+pnpm run test
 ```
 
 ### 代码检查
 ```bash
-npm run lint
+pnpm run lint
 ```
 
 ## 🔧 安装到浏览器
 
-1. 运行 `npm run build` 构建项目
+1. 运行 `pnpm run build` 构建项目
 2. 打开 Chrome 浏览器
 3. 访问 `chrome://extensions/`
 4. 启用"开发者模式"

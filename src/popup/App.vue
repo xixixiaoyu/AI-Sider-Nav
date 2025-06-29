@@ -3,7 +3,7 @@
     <!-- 头部 -->
     <header class="header">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
           <div class="i-carbon-chat text-white text-lg"></div>
         </div>
         <h1 class="text-lg font-semibold text-gray-800">AI Sider Nav</h1>
@@ -81,11 +81,11 @@
       <h3 class="section-title">快捷功能</h3>
       <div class="shortcuts-grid">
         <button @click="openAIChat" class="shortcut-btn">
-          <div class="i-carbon-chat text-blue-500"></div>
+          <div class="i-carbon-chat text-teal-500"></div>
           <span>AI 对话</span>
         </button>
         <button @click="extractPageContent" class="shortcut-btn">
-          <div class="i-carbon-copy text-green-500"></div>
+          <div class="i-carbon-copy text-teal-600"></div>
           <span>提取内容</span>
         </button>
         <button @click="openOptions" class="shortcut-btn">

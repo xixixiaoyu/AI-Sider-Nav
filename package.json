@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "vue-tsc && vite build",
-    "build:zip": "npm run build && node scripts/build.js --zip",
+    "build:zip": "pnpm run build && node scripts/build.js --zip",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -17,8 +17,8 @@
     "icons": "node scripts/generate-icons.js",
     "validate": "node scripts/validate-manifest.js",
     "check-size": "node scripts/check-size.js",
-    "prebuild": "npm run validate",
-    "postbuild": "npm run check-size"
+    "prebuild": "pnpm run validate",
+    "postbuild": "pnpm run check-size"
   },
   "dependencies": {
     "vue": "^3.4.0",

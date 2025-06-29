@@ -287,7 +287,7 @@ const showSaveStatus = (type: 'success' | 'error', message: string) => {
 }
 
 .nav-tab.active {
-  @apply text-blue-600 border-blue-600;
+  @apply text-teal-600 border-teal-600;
 }
 
 .content-area {
@@ -316,7 +316,7 @@ const showSaveStatus = (type: 'success' | 'error', message: string) => {
 
 .setting-select,
 .setting-input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent;
 }
 
 .api-key-input {
@@ -350,7 +350,7 @@ const showSaveStatus = (type: 'success' | 'error', message: string) => {
 }
 
 .action-btn.primary {
-  @apply bg-blue-600 text-white hover:bg-blue-700;
+  @apply bg-teal-600 text-white hover:bg-teal-700;
 }
 
 .action-btn.secondary {

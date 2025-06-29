@@ -10,15 +10,14 @@ const __dirname = path.dirname(__filename)
 
 // 创建简单的 base64 编码的 PNG 图标
 const createIcon = (size) => {
-  // 这里使用一个简单的蓝色方形图标作为示例
-  // 实际项目中应该使用专业的图标设计
+  // 使用青绿色主题的图标设计
   const canvas = `
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${size}" height="${size}" rx="${size/5}" fill="#3B82F6"/>
+      <rect width="${size}" height="${size}" rx="${size/5}" fill="#79b4a6"/>
       <rect x="${size/4}" y="${size/4}" width="${size/2}" height="${size/2}" rx="${size/10}" fill="white"/>
-      <circle cx="${size/2.5}" cy="${size/2.2}" r="${size/20}" fill="#3B82F6"/>
-      <circle cx="${size/1.7}" cy="${size/2.2}" r="${size/20}" fill="#3B82F6"/>
-      <circle cx="${size/1.3}" cy="${size/2.2}" r="${size/20}" fill="#3B82F6"/>
+      <circle cx="${size/2.5}" cy="${size/2.2}" r="${size/20}" fill="#79b4a6"/>
+      <circle cx="${size/1.7}" cy="${size/2.2}" r="${size/20}" fill="#79b4a6"/>
+      <circle cx="${size/1.3}" cy="${size/2.2}" r="${size/20}" fill="#79b4a6"/>
     </svg>
   `
   return canvas

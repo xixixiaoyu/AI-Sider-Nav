@@ -62,19 +62,19 @@
       <h3 class="text-sm font-medium text-gray-700 mb-2">快速操作</h3>
       <div class="actions-grid">
         <button @click="askQuestion" class="quick-action-btn">
-          <div class="i-carbon-help text-lg text-blue-500"></div>
+          <div class="i-carbon-help text-lg text-teal-500"></div>
           <span>提问</span>
         </button>
         <button @click="translate" class="quick-action-btn">
-          <div class="i-carbon-translate text-lg text-green-500"></div>
+          <div class="i-carbon-translate text-lg text-teal-600"></div>
           <span>翻译</span>
         </button>
         <button @click="explain" class="quick-action-btn">
-          <div class="i-carbon-idea text-lg text-yellow-500"></div>
+          <div class="i-carbon-idea text-lg text-teal-700"></div>
           <span>解释</span>
         </button>
         <button @click="rewrite" class="quick-action-btn">
-          <div class="i-carbon-edit text-lg text-purple-500"></div>
+          <div class="i-carbon-edit text-lg text-teal-800"></div>
           <span>改写</span>
         </button>
       </div>
@@ -248,7 +248,7 @@ const loadSummaryHistory = () => {
 }
 
 .extract-btn {
-  @apply flex items-center px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50;
+  @apply flex items-center px-2 py-1 text-xs bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors disabled:opacity-50;
 }
 
 .content-block {

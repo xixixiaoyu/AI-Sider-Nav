@@ -19,19 +19,24 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        
+        cache: 'pnpm'
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
       
     - name: Run type check
-      run: npm run type-check
-      
+      run: pnpm run type-check
+
     - name: Run linting
-      run: npm run lint
-      
+      run: pnpm run lint
+
     - name: Run tests
-      run: npm run test:coverage
+      run: pnpm run test:coverage
       
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -53,16 +58,21 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        
+        cache: 'pnpm'
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
     - name: Install dependencies
-      run: npm ci
-      
+      run: pnpm install --frozen-lockfile
+
     - name: Build extension
-      run: npm run build
-      
+      run: pnpm run build
+
     - name: Create extension package
-      run: npm run build:zip
+      run: pnpm run build:zip
       
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
@@ -87,13 +97,18 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        
+        cache: 'pnpm'
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
     - name: Install dependencies
-      run: npm ci
-      
+      run: pnpm install --frozen-lockfile
+
     - name: Build extension
-      run: npm run build:zip
+      run: pnpm run build:zip
       
     - name: Get version
       id: version

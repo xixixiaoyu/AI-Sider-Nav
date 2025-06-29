@@ -32,7 +32,7 @@
 
 /* 调整大小时的视觉反馈 */
 #ai-sider-nav-sidebar .resize-handle:hover {
-  background: rgba(59, 130, 246, 0.1) !important;
+  background: rgba(121, 180, 166, 0.1) !important;
 }
 
 /* 防止页面内容被侧边栏遮挡时的过渡动画 */
@@ -46,7 +46,7 @@ html {
 
 /* 选中文本的高亮效果 */
 .ai-sider-nav-highlight {
-  background-color: rgba(59, 130, 246, 0.2) !important;
+  background-color: rgba(121, 180, 166, 0.2) !important;
   border-radius: 2px !important;
   padding: 1px 2px !important;
   transition: background-color 0.2s ease !important;
