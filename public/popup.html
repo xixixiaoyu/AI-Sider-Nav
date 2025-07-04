@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Sider Nav Settings</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #79b4a6 0%, #6ba3a0 100%);
+      color: white;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .setting-item {
+      margin-bottom: 15px;
+    }
+    
+    .setting-label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .setting-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>AI Sider Nav</h1>
+  </div>
+  
+  <div class="setting-item">
+    <label class="setting-label" for="searchEngine">搜索引擎</label>
+    <select id="searchEngine" class="setting-select">
+      <option value="google">Google</option>
+      <option value="bing">Bing</option>
+      <option value="baidu">百度</option>
+    </select>
+  </div>
+  
+  <div class="setting-item">
+    <label class="setting-label" for="timeFormat">时间格式</label>
+    <select id="timeFormat" class="setting-select">
+      <option value="24h">24小时制</option>
+      <option value="12h">12小时制</option>
+    </select>
+  </div>
+  
+  <div class="footer">
+    设置会自动保存
+  </div>
+  
+  <script>
+    // 简单的设置管理
+    const searchEngineSelect = document.getElementById('searchEngine');
+    const timeFormatSelect = document.getElementById('timeFormat');
+    
+    // 加载设置
+    chrome.storage.sync.get(['userSettings'], (result) => {
+      if (result.userSettings) {
+        searchEngineSelect.value = result.userSettings.searchEngine || 'google';
+        timeFormatSelect.value = result.userSettings.timeFormat || '24h';
+      }
+    });
+    
+    // 保存设置
+    function saveSettings() {
+      chrome.storage.sync.get(['userSettings'], (result) => {
+        const settings = result.userSettings || {};
+        settings.searchEngine = searchEngineSelect.value;
+        settings.timeFormat = timeFormatSelect.value;
+        
+        chrome.storage.sync.set({ userSettings: settings });
+      });
+    }
+    
+    searchEngineSelect.addEventListener('change', saveSettings);
+    timeFormatSelect.addEventListener('change', saveSettings);
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "name": "ai-sider-nav",
+  "version": "1.0.0",
+  "description": "A beautiful new tab page extension for Chrome and Edge browsers",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:check": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "vue": "^3.4.0",
+    "pinia": "^2.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/chrome": "^0.0.268",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/eslint-config-typescript": "^12.0.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.20.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.3.0",
+    "unocss": "^0.58.0",
+    "vite": "^5.1.0",
+    "vitest": "^1.2.0",
+    "vue-tsc": "^1.8.27"
+  },
+  "keywords": [
+    "browser-extension",
+    "new-tab",
+    "vue3",
+    "typescript",
+    "chrome-extension",
+    "edge-extension"
+  ],
+  "author": "AI Sider Nav Team",
+  "license": "MIT"
+}
