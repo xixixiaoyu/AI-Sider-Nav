@@ -5,6 +5,9 @@
       <div class="background-gradient"></div>
     </div>
 
+    <!-- 搜索引擎选择器 -->
+    <SearchEngineSelector />
+
     <!-- 主要内容 -->
     <div class="main-content">
       <!-- 时间显示组件 -->
@@ -23,6 +26,7 @@
   import { onMounted } from 'vue'
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
+  import SearchEngineSelector from '@/components/SearchEngineSelector.vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()
