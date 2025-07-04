@@ -8,14 +8,18 @@
     "newtab": "index.html"
   },
   "icons": {
-    "16": "images/site-icon.png",
-    "32": "images/site-icon.png",
-    "48": "images/site-icon.png",
-    "128": "images/site-icon.png"
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AI Sider Nav Settings"
+    "default_title": "AI Sider Nav Settings",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
