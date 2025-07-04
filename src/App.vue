@@ -5,8 +5,8 @@
       <div class="background-gradient"></div>
     </div>
 
-    <!-- 搜索引擎选择器 -->
-    <SearchEngineSelector />
+    <!-- 设置面板 -->
+    <SettingsPanel />
 
     <!-- 主要内容 -->
     <div class="main-content">
@@ -29,7 +29,7 @@
   import { onMounted } from 'vue'
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
-  import SearchEngineSelector from '@/components/SearchEngineSelector.vue'
+  import SettingsPanel from '@/components/SettingsPanel.vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()
