@@ -12,6 +12,20 @@ export interface UserSettings {
     url: string
     icon?: string
   }>
+  // 天气相关设置
+  weather: {
+    enabled: boolean
+    temperatureUnit: 'celsius' | 'fahrenheit'
+    city: string
+    autoLocation: boolean
+    apiKey?: string
+  }
+  // 日历相关设置
+  calendar: {
+    enabled: boolean
+    weekStartsOn: 'monday' | 'sunday'
+    showWeekNumbers: boolean
+  }
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -22,7 +36,19 @@ export const useSettingsStore = defineStore('settings', () => {
     timeFormat: '24h',
     language: 'zh-CN',
     showSeconds: false,
-    customSearchEngines: []
+    customSearchEngines: [],
+    weather: {
+      enabled: true,
+      temperatureUnit: 'celsius',
+      city: '',
+      autoLocation: true,
+      apiKey: undefined,
+    },
+    calendar: {
+      enabled: true,
+      weekStartsOn: 'monday',
+      showWeekNumbers: false,
+    },
   }
 
   // 响应式状态
@@ -35,18 +61,18 @@ export const useSettingsStore = defineStore('settings', () => {
       google: {
         name: 'Google',
         url: 'https://www.google.com/search?q=',
-        icon: '🔍'
+        icon: '🔍',
       },
       bing: {
         name: 'Bing',
         url: 'https://www.bing.com/search?q=',
-        icon: '🔍'
+        icon: '🔍',
       },
       baidu: {
         name: '百度',
         url: 'https://www.baidu.com/s?wd=',
-        icon: '🔍'
-      }
+        icon: '🔍',
+      },
     }
     return engines[settings.value.searchEngine]
   })
@@ -89,10 +115,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   // 更新单个设置
-  const updateSetting = async <K extends keyof UserSettings>(
-    key: K,
-    value: UserSettings[K]
-  ) => {
+  const updateSetting = async <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
     settings.value[key] = value
     await saveSettings()
   }
@@ -104,11 +127,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   // 添加自定义搜索引擎
-  const addCustomSearchEngine = async (engine: {
-    name: string
-    url: string
-    icon?: string
-  }) => {
+  const addCustomSearchEngine = async (engine: { name: string; url: string; icon?: string }) => {
     settings.value.customSearchEngines.push(engine)
     await saveSettings()
   }
@@ -128,6 +147,6 @@ export const useSettingsStore = defineStore('settings', () => {
     updateSetting,
     resetSettings,
     addCustomSearchEngine,
-    removeCustomSearchEngine
+    removeCustomSearchEngine,
   }
 })

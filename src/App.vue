@@ -10,8 +10,14 @@
 
     <!-- 主要内容 -->
     <div class="main-content">
-      <!-- 时间显示组件 -->
-      <TimeDisplay />
+      <!-- 时间和天气区域 -->
+      <div class="time-weather-section">
+        <!-- 时间显示组件 -->
+        <TimeDisplay />
+
+        <!-- 天气显示组件 -->
+        <WeatherDisplay />
+      </div>
 
       <!-- 搜索组件 -->
       <SearchBox />
@@ -27,10 +33,12 @@
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
   import SearchEngineSelector from '@/components/SearchEngineSelector.vue'
-  import { useAppStore, useSettingsStore } from '@/stores'
+  import WeatherDisplay from '@/components/WeatherDisplay.vue'
+  import { useAppStore, useSettingsStore, useWeatherStore } from '@/stores'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
+  const weatherStore = useWeatherStore()
 
   // 应用初始化
   onMounted(async () => {
@@ -39,6 +47,12 @@
 
     // 加载搜索历史
     await appStore.loadSearchHistory()
+
+    // 初始化天气数据
+    await weatherStore.loadCachedData()
+    if (settingsStore.settings.weather.enabled) {
+      await weatherStore.updateWeather(settingsStore.settings.weather)
+    }
   })
 </script>
 
@@ -93,6 +107,16 @@
     animation: fadeInUp 1s ease-out;
   }
 
+  .time-weather-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 800px;
+  }
+
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -120,6 +144,13 @@
   @media (max-width: 768px) {
     .main-content {
       padding: 6rem 1rem 1.5rem;
+    }
+
+    .time-weather-section {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
     }
 
     .footer-hint {
