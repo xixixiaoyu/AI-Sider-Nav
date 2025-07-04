@@ -12,14 +12,6 @@ export interface UserSettings {
     url: string
     icon?: string
   }>
-  // 天气相关设置
-  weather: {
-    enabled: boolean
-    temperatureUnit: 'celsius' | 'fahrenheit'
-    city: string
-    autoLocation: boolean
-    apiKey?: string
-  }
   // 日历相关设置
   calendar: {
     enabled: boolean
@@ -37,13 +29,6 @@ export const useSettingsStore = defineStore('settings', () => {
     language: 'zh-CN',
     showSeconds: false,
     customSearchEngines: [],
-    weather: {
-      enabled: true,
-      temperatureUnit: 'celsius',
-      city: '',
-      autoLocation: true,
-      apiKey: undefined,
-    },
     calendar: {
       enabled: true,
       weekStartsOn: 'monday',

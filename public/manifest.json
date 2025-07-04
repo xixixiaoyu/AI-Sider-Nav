@@ -3,8 +3,7 @@
   "name": "AI Sider Nav",
   "version": "1.0.0",
   "description": "A beautiful new tab page with time display and search functionality",
-  "permissions": ["storage", "geolocation"],
-  "host_permissions": ["https://api.openweathermap.org/*"],
+  "permissions": ["storage"],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
