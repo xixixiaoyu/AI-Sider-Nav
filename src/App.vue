@@ -58,97 +58,23 @@
   .background-gradient {
     width: 100%;
     height: 100%;
-    background:
-      radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-      linear-gradient(
-        180deg,
-        #87ceeb 0%,
-        #98d8e8 20%,
-        #a8e6cf 40%,
-        #79b4a6 60%,
-        #6ba3a0 80%,
-        #5a9b95 100%
-      );
-    background-size:
-      400% 400%,
-      300% 300%,
-      200% 200%,
-      100% 100%;
-    animation: gradientShift 20s ease infinite;
+    background-image: url('/images/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     position: relative;
   }
 
-  .background-gradient::before {
+  /* 添加一个轻微的覆盖层以保持文字可读性 */
+  .background-gradient::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background:
-      radial-gradient(ellipse at 30% 70%, rgba(34, 139, 34, 0.1) 0%, transparent 70%),
-      radial-gradient(ellipse at 70% 30%, rgba(34, 139, 34, 0.08) 0%, transparent 60%);
-    animation: cloudFloat 25s ease-in-out infinite;
-  }
-
-  @keyframes gradientShift {
-    0% {
-      background-position:
-        0% 50%,
-        0% 0%,
-        0% 0%,
-        0% 0%;
-    }
-    25% {
-      background-position:
-        50% 25%,
-        25% 25%,
-        25% 25%,
-        0% 0%;
-    }
-    50% {
-      background-position:
-        100% 50%,
-        50% 50%,
-        50% 50%,
-        0% 0%;
-    }
-    75% {
-      background-position:
-        50% 75%,
-        75% 75%,
-        75% 75%,
-        0% 0%;
-    }
-    100% {
-      background-position:
-        0% 50%,
-        0% 0%,
-        0% 0%,
-        0% 0%;
-    }
-  }
-
-  @keyframes cloudFloat {
-    0%,
-    100% {
-      transform: translateX(0) translateY(0);
-      opacity: 0.6;
-    }
-    25% {
-      transform: translateX(10px) translateY(-5px);
-      opacity: 0.8;
-    }
-    50% {
-      transform: translateX(-5px) translateY(10px);
-      opacity: 0.7;
-    }
-    75% {
-      transform: translateX(-10px) translateY(-8px);
-      opacity: 0.9;
-    }
+    background: rgba(121, 180, 166, 0.1);
+    pointer-events: none;
   }
 
   .main-content {
