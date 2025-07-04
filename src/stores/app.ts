@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
   // 应用状态
@@ -9,22 +9,31 @@ export const useAppStore = defineStore('app', () => {
   const searchHistory = ref<string[]>([])
   const recentSearches = ref<string[]>([])
 
-  // 计算属性
-  const formattedTime = computed(() => {
-    return currentTime.value.toLocaleTimeString('zh-CN', {
+  // 格式化时间的方法
+  const formatTime = (timeFormat: '12h' | '24h', language: string, showSeconds: boolean) => {
+    const is12Hour = timeFormat === '12h'
+
+    const options: Intl.DateTimeFormatOptions = {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false,
-    })
-  })
+      hour12: is12Hour,
+    }
 
-  const formattedDate = computed(() => {
-    return currentTime.value.toLocaleDateString('zh-CN', {
+    if (showSeconds) {
+      options.second = '2-digit'
+    }
+
+    return currentTime.value.toLocaleTimeString(language, options)
+  }
+
+  // 格式化日期的方法
+  const formatDate = (language: string) => {
+    return currentTime.value.toLocaleDateString(language, {
       month: 'long',
       day: 'numeric',
       weekday: 'long',
     })
-  })
+  }
 
   // 更新时间
   const updateTime = () => {
@@ -176,11 +185,9 @@ export const useAppStore = defineStore('app', () => {
     searchHistory,
     recentSearches,
 
-    // 计算属性
-    formattedTime,
-    formattedDate,
-
     // 方法
+    formatTime,
+    formatDate,
     updateTime,
     toggleSettings,
     closeSettings,

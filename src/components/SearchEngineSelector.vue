@@ -1,5 +1,6 @@
 <template>
   <div class="search-engine-selector">
+    <!-- 搜索引擎选择器 -->
     <div class="selector-container">
       <div class="current-engine" @click="toggleDropdown">
         <div class="engine-info">
@@ -34,6 +35,27 @@
           </div>
         </div>
       </transition>
+    </div>
+
+    <!-- 时间格式设置 -->
+    <div class="time-format-selector">
+      <div class="time-format-label">时间格式</div>
+      <div class="time-format-options">
+        <button
+          class="time-format-btn"
+          :class="{ active: settings.timeFormat === '24h' }"
+          @click="setTimeFormat('24h')"
+        >
+          24小时制
+        </button>
+        <button
+          class="time-format-btn"
+          :class="{ active: settings.timeFormat === '12h' }"
+          @click="setTimeFormat('12h')"
+        >
+          12小时制
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -82,6 +104,10 @@
     isDropdownOpen.value = false
   }
 
+  const setTimeFormat = async (format: '12h' | '24h') => {
+    await settingsStore.updateSetting('timeFormat', format)
+  }
+
   // 点击外部关闭下拉菜单
   const handleClickOutside = (event: MouseEvent) => {
     const target = event.target as HTMLElement
@@ -106,6 +132,9 @@
     right: 2rem;
     z-index: 100;
     animation: slideInRight 0.8s ease-out 0.6s both;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .selector-container {
@@ -278,6 +307,87 @@
 
     .dropdown-item {
       padding: 0.625rem;
+    }
+  }
+
+  /* 时间格式设置样式 */
+  .time-format-selector {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.1),
+      0 1px 4px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .time-format-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    text-align: center;
+  }
+
+  .time-format-options {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .time-format-btn {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(121, 180, 166, 0.3);
+    border-radius: 8px;
+    background: transparent;
+    color: #374151;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .time-format-btn:hover {
+    background: rgba(121, 180, 166, 0.1);
+    border-color: rgba(121, 180, 166, 0.5);
+  }
+
+  .time-format-btn.active {
+    background: rgba(121, 180, 166, 0.2);
+    border-color: #79b4a6;
+    color: #047857;
+  }
+
+  @media (max-width: 768px) {
+    .time-format-selector {
+      padding: 0.875rem;
+    }
+
+    .time-format-label {
+      font-size: 0.8rem;
+      margin-bottom: 0.625rem;
+    }
+
+    .time-format-btn {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .time-format-selector {
+      padding: 0.75rem;
+    }
+
+    .time-format-label {
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-format-btn {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.7rem;
     }
   }
 </style>

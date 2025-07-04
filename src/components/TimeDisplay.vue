@@ -6,13 +6,24 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, onUnmounted } from 'vue'
-  import { useAppStore } from '@/stores'
+  import { onMounted, onUnmounted, computed } from 'vue'
+  import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()
+  const settingsStore = useSettingsStore()
 
-  // 使用计算属性从 store 获取格式化的时间和日期
-  const { formattedTime, formattedDate } = appStore
+  // 响应式计算属性
+  const formattedTime = computed(() => {
+    return appStore.formatTime(
+      settingsStore.settings.timeFormat,
+      settingsStore.settings.language,
+      settingsStore.settings.showSeconds
+    )
+  })
+
+  const formattedDate = computed(() => {
+    return appStore.formatDate(settingsStore.settings.language)
+  })
 
   let timeInterval: number | null = null
 
