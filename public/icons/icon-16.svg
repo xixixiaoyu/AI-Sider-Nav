@@ -1,9 +1,0 @@
-
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="16" height="16" rx="3.2" fill="#79b4a6"/>
-      <rect x="4" y="4" width="8" height="8" rx="1.6" fill="white"/>
-      <circle cx="6.4" cy="7.2727272727272725" r="0.8" fill="#79b4a6"/>
-      <circle cx="9.411764705882353" cy="7.2727272727272725" r="0.8" fill="#79b4a6"/>
-      <circle cx="12.307692307692307" cy="7.2727272727272725" r="0.8" fill="#79b4a6"/>
-    </svg>
-  
