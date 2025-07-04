@@ -71,7 +71,7 @@
     // 延迟一点时间确保动画完成后再聚焦
     setTimeout(() => {
       searchInputRef.value?.focus()
-    }, 800) // 等待 slideInUp 动画完成
+    }, 400) // 等待 slideInUp 动画完成
   })
 </script>
 
@@ -80,7 +80,7 @@
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
-    animation: slideInUp 0.8s ease-out 0.4s both;
+    animation: slideInUp 0.3s ease-out 0.1s both;
   }
 
   .search-box {
