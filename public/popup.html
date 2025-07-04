@@ -6,19 +6,22 @@
     <title>AI Sider Nav Settings</title>
     <style>
       body {
-        width: 320px;
-        max-height: 600px;
+        width: 280px;
+        height: 120px;
         padding: 20px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         margin: 0;
         background: linear-gradient(135deg, #79b4a6 0%, #6ba3a0 100%);
         color: white;
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
       }
 
       .header {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
       }
 
       .header h1 {
@@ -27,43 +30,11 @@
         font-weight: 600;
       }
 
-      .setting-item {
-        margin-bottom: 15px;
-      }
-
-      .setting-label {
-        display: block;
-        margin-bottom: 5px;
-        font-size: 14px;
-        font-weight: 500;
-      }
-
-      .setting-select,
-      .setting-input {
-        width: 100%;
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.9);
-        font-size: 14px;
-        box-sizing: border-box;
-      }
-
-      .setting-checkbox {
-        margin-right: 8px;
-      }
-
-      .checkbox-container {
-        display: flex;
-        align-items: center;
-        margin-top: 5px;
-      }
-
       .footer {
         text-align: center;
-        margin-top: 20px;
         font-size: 12px;
         opacity: 0.8;
+        line-height: 1.4;
       }
     </style>
   </head>
@@ -72,116 +43,11 @@
       <h1>AI Sider Nav</h1>
     </div>
 
-    <div class="setting-item">
-      <label class="setting-label" for="timeFormat">时间格式</label>
-      <select id="timeFormat" class="setting-select">
-        <option value="24h">24小时制</option>
-        <option value="12h">12小时制</option>
-      </select>
-    </div>
-
-    <div class="setting-item">
-      <label class="setting-label">天气功能</label>
-      <div class="checkbox-container">
-        <input type="checkbox" id="weatherEnabled" class="setting-checkbox" checked />
-        <label for="weatherEnabled">启用天气显示</label>
-      </div>
-    </div>
-
-    <div class="setting-item">
-      <label class="setting-label" for="temperatureUnit">温度单位</label>
-      <select id="temperatureUnit" class="setting-select">
-        <option value="celsius">摄氏度 (°C)</option>
-        <option value="fahrenheit">华氏度 (°F)</option>
-      </select>
-    </div>
-
-    <div class="setting-item">
-      <label class="setting-label">位置设置</label>
-      <div class="checkbox-container">
-        <input type="checkbox" id="autoLocation" class="setting-checkbox" checked />
-        <label for="autoLocation">自动获取位置</label>
-      </div>
-    </div>
-
-    <div class="setting-item">
-      <label class="setting-label" for="cityName">城市名称（可选）</label>
-      <input type="text" id="cityName" class="setting-input" placeholder="如：北京 或 Beijing" />
-    </div>
-
-    <div class="setting-item">
-      <label class="setting-label">日历功能</label>
-      <div class="checkbox-container">
-        <input type="checkbox" id="calendarEnabled" class="setting-checkbox" checked />
-        <label for="calendarEnabled">启用日历（点击时间查看）</label>
-      </div>
-    </div>
-
-    <div class="footer">设置会自动保存</div>
+    <div class="footer">点击扩展图标打开主页面</div>
 
     <script>
-      // 获取所有设置元素
-      const timeFormatSelect = document.getElementById('timeFormat')
-      const weatherEnabledCheckbox = document.getElementById('weatherEnabled')
-      const temperatureUnitSelect = document.getElementById('temperatureUnit')
-      const autoLocationCheckbox = document.getElementById('autoLocation')
-      const cityNameInput = document.getElementById('cityName')
-      const calendarEnabledCheckbox = document.getElementById('calendarEnabled')
-
-      // 加载设置
-      chrome.storage.sync.get(['userSettings'], (result) => {
-        const settings = result.userSettings || {}
-
-        // 基本设置
-        timeFormatSelect.value = settings.timeFormat || '24h'
-
-        // 天气设置
-        if (settings.weather) {
-          weatherEnabledCheckbox.checked = settings.weather.enabled !== false
-          temperatureUnitSelect.value = settings.weather.temperatureUnit || 'celsius'
-          autoLocationCheckbox.checked = settings.weather.autoLocation !== false
-          cityNameInput.value = settings.weather.city || ''
-        }
-
-        // 日历设置
-        if (settings.calendar) {
-          calendarEnabledCheckbox.checked = settings.calendar.enabled !== false
-        }
-      })
-
-      // 保存设置
-      function saveSettings() {
-        chrome.storage.sync.get(['userSettings'], (result) => {
-          const settings = result.userSettings || {
-            weather: {},
-            calendar: {},
-          }
-
-          // 基本设置
-          settings.timeFormat = timeFormatSelect.value
-
-          // 天气设置
-          settings.weather = settings.weather || {}
-          settings.weather.enabled = weatherEnabledCheckbox.checked
-          settings.weather.temperatureUnit = temperatureUnitSelect.value
-          settings.weather.autoLocation = autoLocationCheckbox.checked
-          settings.weather.city = cityNameInput.value.trim()
-
-          // 日历设置
-          settings.calendar = settings.calendar || {}
-          settings.calendar.enabled = calendarEnabledCheckbox.checked
-
-          chrome.storage.sync.set({ userSettings: settings })
-        })
-      }
-
-      // 添加事件监听器
-      timeFormatSelect.addEventListener('change', saveSettings)
-      weatherEnabledCheckbox.addEventListener('change', saveSettings)
-      temperatureUnitSelect.addEventListener('change', saveSettings)
-      autoLocationCheckbox.addEventListener('change', saveSettings)
-      cityNameInput.addEventListener('input', saveSettings)
-      calendarEnabledCheckbox.addEventListener('change', saveSettings)
+      // 简单的弹窗，只显示标题和提示
+      console.log('AI Sider Nav popup loaded')
     </script>
   </body>
 </html>
