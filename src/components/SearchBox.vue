@@ -14,6 +14,7 @@
         </svg>
       </div>
       <input
+        ref="searchInputRef"
         v-model="searchQuery"
         type="text"
         placeholder="输入搜索内容"
@@ -27,13 +28,14 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, onMounted, nextTick } from 'vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
 
   const searchQuery = ref('')
+  const searchInputRef = ref<HTMLInputElement>()
 
   // 计算属性
   const isInputFocused = computed(() => appStore.isSearchFocused)
@@ -62,6 +64,15 @@
   const handleBlur = () => {
     appStore.setSearchFocus(false)
   }
+
+  // 组件挂载后自动聚焦到搜索框
+  onMounted(async () => {
+    await nextTick()
+    // 延迟一点时间确保动画完成后再聚焦
+    setTimeout(() => {
+      searchInputRef.value?.focus()
+    }, 800) // 等待 slideInUp 动画完成
+  })
 </script>
 
 <style scoped>

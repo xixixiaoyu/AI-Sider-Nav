@@ -82,9 +82,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     height: 100vh;
-    padding: 2rem;
+    padding: 8rem 2rem 2rem;
     z-index: 1;
     animation: fadeInUp 1s ease-out;
   }
@@ -115,7 +115,7 @@
   /* 响应式设计 */
   @media (max-width: 768px) {
     .main-content {
-      padding: 1.5rem 1rem;
+      padding: 6rem 1rem 1.5rem;
     }
 
     .footer-hint {
@@ -126,7 +126,7 @@
 
   @media (max-width: 480px) {
     .main-content {
-      padding: 1rem 0.75rem;
+      padding: 5rem 0.75rem 1rem;
     }
 
     .footer-hint {
@@ -145,6 +145,12 @@
       position: relative;
       bottom: auto;
       margin-top: 2rem;
+    }
+  }
+
+  @media (max-height: 500px) {
+    .main-content {
+      padding-top: 2rem;
     }
   }
 </style>

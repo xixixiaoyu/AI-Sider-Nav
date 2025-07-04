@@ -14,7 +14,7 @@ export const useAppStore = defineStore('app', () => {
     return currentTime.value.toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     })
   })
 
@@ -22,7 +22,7 @@ export const useAppStore = defineStore('app', () => {
     return currentTime.value.toLocaleDateString('zh-CN', {
       month: 'long',
       day: 'numeric',
-      weekday: 'long'
+      weekday: 'long',
     })
   })
 
@@ -48,6 +48,11 @@ export const useAppStore = defineStore('app', () => {
 
   // 添加搜索历史
   const addSearchHistory = (query: string) => {
+    // 确保 searchHistory.value 是数组
+    if (!Array.isArray(searchHistory.value)) {
+      searchHistory.value = []
+    }
+
     if (query.trim() && !searchHistory.value.includes(query)) {
       searchHistory.value.unshift(query)
       // 限制历史记录数量
@@ -60,21 +65,26 @@ export const useAppStore = defineStore('app', () => {
 
   // 添加最近搜索
   const addRecentSearch = (query: string) => {
+    // 确保 recentSearches.value 是数组
+    if (!Array.isArray(recentSearches.value)) {
+      recentSearches.value = []
+    }
+
     if (query.trim()) {
       // 移除已存在的相同搜索
       const index = recentSearches.value.indexOf(query)
       if (index > -1) {
         recentSearches.value.splice(index, 1)
       }
-      
+
       // 添加到开头
       recentSearches.value.unshift(query)
-      
+
       // 限制最近搜索数量
       if (recentSearches.value.length > 10) {
         recentSearches.value = recentSearches.value.slice(0, 10)
       }
-      
+
       saveRecentSearches()
     }
   }
@@ -122,21 +132,35 @@ export const useAppStore = defineStore('app', () => {
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         const result = await chrome.storage.local.get(['searchHistory', 'recentSearches'])
-        if (result.searchHistory) {
+        if (result.searchHistory && Array.isArray(result.searchHistory)) {
           searchHistory.value = result.searchHistory
         }
-        if (result.recentSearches) {
+        if (result.recentSearches && Array.isArray(result.recentSearches)) {
           recentSearches.value = result.recentSearches
         }
       } else {
         const storedHistory = localStorage.getItem('searchHistory')
         const storedRecent = localStorage.getItem('recentSearches')
-        
+
         if (storedHistory) {
-          searchHistory.value = JSON.parse(storedHistory)
+          try {
+            const parsed = JSON.parse(storedHistory)
+            if (Array.isArray(parsed)) {
+              searchHistory.value = parsed
+            }
+          } catch (e) {
+            console.warn('Invalid search history data, using empty array')
+          }
         }
         if (storedRecent) {
-          recentSearches.value = JSON.parse(storedRecent)
+          try {
+            const parsed = JSON.parse(storedRecent)
+            if (Array.isArray(parsed)) {
+              recentSearches.value = parsed
+            }
+          } catch (e) {
+            console.warn('Invalid recent searches data, using empty array')
+          }
         }
       }
     } catch (error) {
@@ -151,11 +175,11 @@ export const useAppStore = defineStore('app', () => {
     currentTime,
     searchHistory,
     recentSearches,
-    
+
     // 计算属性
     formattedTime,
     formattedDate,
-    
+
     // 方法
     updateTime,
     toggleSettings,
@@ -165,6 +189,6 @@ export const useAppStore = defineStore('app', () => {
     addRecentSearch,
     clearSearchHistory,
     clearRecentSearches,
-    loadSearchHistory
+    loadSearchHistory,
   }
 })
