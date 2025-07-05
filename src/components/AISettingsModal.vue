@@ -211,10 +211,10 @@
             alert('API Key 无效，请检查后重试')
             return
           }
-          setApiKey(newApiKey)
+          await setApiKey(newApiKey)
         } else {
           // 如果新的 API Key 为空，删除存储的 API Key
-          removeApiKey()
+          await removeApiKey()
         }
       }
 

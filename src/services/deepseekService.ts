@@ -89,8 +89,8 @@ export function abortCurrentRequest() {
   }
 }
 
-const getHeaders = () => {
-  const apiKey = getApiKey()
+const getHeaders = async () => {
+  const apiKey = await getApiKey()
   if (!apiKey) {
     throw new Error(i18n.global.t('configureApiKey'))
   }
@@ -129,9 +129,9 @@ export async function getAIStreamResponse(
 
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: await getHeaders(),
       body: JSON.stringify({
-        model: getAIModel(),
+        model: await getAIModel(),
         messages: messagesWithSystemPrompts,
         temperature,
         stream: true,
@@ -223,9 +223,9 @@ export async function getAIResponse(userMessage: string, temperature = 0.3): Pro
 
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: await getHeaders(),
       body: JSON.stringify({
-        model: getAIModel(),
+        model: await getAIModel(),
         messages,
         temperature,
         stream: false,
@@ -265,9 +265,9 @@ export async function optimizeText(text: string): Promise<string> {
     // 文本优化使用专门的系统提示词，不受用户自定义系统提示词影响
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: await getHeaders(),
       body: JSON.stringify({
-        model: getAIModel(),
+        model: await getAIModel(),
         messages: [
           {
             role: 'system',

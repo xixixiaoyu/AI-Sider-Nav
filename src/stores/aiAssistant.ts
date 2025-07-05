@@ -95,7 +95,58 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
   }
 
   const setSidebarWidth = (width: number) => {
-    sidebarState.value.width = Math.max(300, Math.min(800, width))
+    const minWidth = 300
+    const maxWidth = Math.min(800, window.innerWidth * 0.8)
+    sidebarState.value.width = Math.max(minWidth, Math.min(maxWidth, width))
+
+    // 保存宽度设置
+    saveSidebarWidth(sidebarState.value.width)
+  }
+
+  // 保存侧边栏宽度到存储
+  const saveSidebarWidth = async (width: number) => {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.sync.set({ aiSidebarWidth: width })
+      } else {
+        localStorage.setItem('aiSidebarWidth', width.toString())
+      }
+    } catch (error) {
+      console.error('保存侧边栏宽度失败:', error)
+    }
+  }
+
+  // 从存储加载侧边栏宽度
+  const loadSidebarWidth = async () => {
+    try {
+      let savedWidth = 400 // 默认宽度
+
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        try {
+          const result = await chrome.storage.sync.get('aiSidebarWidth')
+          if (result.aiSidebarWidth) {
+            savedWidth = result.aiSidebarWidth
+          }
+        } catch (chromeError) {
+          console.warn('从 chrome.storage 获取侧边栏宽度失败，回退到 localStorage:', chromeError)
+        }
+      }
+
+      // 回退到 localStorage
+      if (savedWidth === 400) {
+        const stored = localStorage.getItem('aiSidebarWidth')
+        if (stored) {
+          savedWidth = parseInt(stored, 10)
+        }
+      }
+
+      // 应用宽度限制
+      const minWidth = 300
+      const maxWidth = Math.min(800, window.innerWidth * 0.8)
+      sidebarState.value.width = Math.max(minWidth, Math.min(maxWidth, savedWidth))
+    } catch (error) {
+      console.error('加载侧边栏宽度失败:', error)
+    }
   }
 
   const setSidebarPosition = (position: 'left' | 'right') => {
@@ -252,16 +303,28 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
   // 持久化
   const saveSettings = async () => {
     try {
-      const data = {
-        settings: settings.value,
-        shortcuts: shortcuts.value,
-        sidebarState: sidebarState.value,
+      // 获取现有的完整设置
+      let existingSettings = {}
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        const result = await chrome.storage.sync.get(['aiSiderNavSettings'])
+        existingSettings = result.aiSiderNavSettings || {}
+      } else {
+        const stored = localStorage.getItem('aiSiderNavSettings')
+        existingSettings = stored ? JSON.parse(stored) : {}
+      }
+
+      // 更新 AI 助手相关设置
+      const updatedSettings = {
+        ...existingSettings,
+        aiAssistant: settings.value,
+        aiAssistantShortcuts: shortcuts.value,
+        aiAssistantSidebarState: sidebarState.value,
       }
 
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.sync.set({ aiAssistantSettings: data })
+        await chrome.storage.sync.set({ aiSiderNavSettings: updatedSettings })
       } else {
-        localStorage.setItem('aiAssistantSettings', JSON.stringify(data))
+        localStorage.setItem('aiSiderNavSettings', JSON.stringify(updatedSettings))
       }
     } catch (error) {
       console.error('保存 AI 助手设置失败:', error)
@@ -289,22 +352,38 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     try {
       let data
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.sync.get(['aiAssistantSettings'])
-        data = result.aiAssistantSettings
+        const result = await chrome.storage.sync.get(['aiSiderNavSettings'])
+        data = result.aiSiderNavSettings
       } else {
-        const stored = localStorage.getItem('aiAssistantSettings')
+        const stored = localStorage.getItem('aiSiderNavSettings')
         data = stored ? JSON.parse(stored) : null
       }
 
       if (data) {
+        // 从新的统一设置结构中加载 AI 助手设置
+        if (data.aiAssistant) settings.value = { ...settings.value, ...data.aiAssistant }
+        if (data.aiAssistantShortcuts)
+          shortcuts.value = { ...shortcuts.value, ...data.aiAssistantShortcuts }
+        if (data.aiAssistantSidebarState) {
+          // 恢复侧边栏设置，但不强制关闭状态（让用户控制）
+          const { isOpen, ...otherSidebarState } = data.aiAssistantSidebarState
+          sidebarState.value = {
+            ...sidebarState.value,
+            ...otherSidebarState,
+            // 保持当前的 isOpen 状态，不强制覆盖
+          }
+        }
+
+        // 兼容旧的设置格式
         if (data.settings) settings.value = { ...settings.value, ...data.settings }
         if (data.shortcuts) shortcuts.value = { ...shortcuts.value, ...data.shortcuts }
         if (data.sidebarState) {
-          // 恢复侧边栏设置，但确保新标签页打开时侧边栏是关闭状态
-          sidebarState.value = { 
-            ...sidebarState.value, 
-            ...data.sidebarState,
-            isOpen: false // 强制设置为关闭状态
+          // 兼容旧格式，但不强制关闭状态
+          const { isOpen, ...otherSidebarState } = data.sidebarState
+          sidebarState.value = {
+            ...sidebarState.value,
+            ...otherSidebarState,
+            // 保持当前的 isOpen 状态，不强制覆盖
           }
         }
       }
@@ -337,6 +416,10 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
   const initialize = async () => {
     await loadSettings()
     await loadSessions()
+    await loadSidebarWidth()
+
+    // 确保新标签页打开时侧边栏是关闭的
+    sidebarState.value.isOpen = false
 
     // 智能恢复会话：如果有历史会话但没有当前会话，恢复最近的会话
     if (chatSessions.value.length > 0 && !currentSessionId.value) {
@@ -366,6 +449,7 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     closeSidebar,
     setSidebarWidth,
     setSidebarPosition,
+    loadSidebarWidth,
 
     // 会话操作
     createNewSession,

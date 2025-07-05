@@ -82,15 +82,19 @@ export const useSettingsStore = defineStore('settings', () => {
     isLoading.value = true
     try {
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        const result = await chrome.storage.sync.get('userSettings')
-        if (result.userSettings) {
-          settings.value = { ...defaultSettings, ...result.userSettings }
+        const result = await chrome.storage.sync.get(['aiSiderNavSettings'])
+        if (result.aiSiderNavSettings) {
+          // 从统一设置结构中提取用户设置
+          const userSettings = result.aiSiderNavSettings.userSettings || result.aiSiderNavSettings
+          settings.value = { ...defaultSettings, ...userSettings }
         }
       } else {
         // 开发环境使用 localStorage
-        const stored = localStorage.getItem('userSettings')
+        const stored = localStorage.getItem('aiSiderNavSettings')
         if (stored) {
-          settings.value = { ...defaultSettings, ...JSON.parse(stored) }
+          const data = JSON.parse(stored)
+          const userSettings = data.userSettings || data
+          settings.value = { ...defaultSettings, ...userSettings }
         }
       }
     } catch (error) {
@@ -103,11 +107,27 @@ export const useSettingsStore = defineStore('settings', () => {
   // 保存设置到浏览器存储
   const saveSettings = async () => {
     try {
+      // 获取现有的完整设置
+      let existingSettings = {}
       if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.sync.set({ userSettings: settings.value })
+        const result = await chrome.storage.sync.get(['aiSiderNavSettings'])
+        existingSettings = result.aiSiderNavSettings || {}
       } else {
-        // 开发环境使用 localStorage
-        localStorage.setItem('userSettings', JSON.stringify(settings.value))
+        const stored = localStorage.getItem('aiSiderNavSettings')
+        existingSettings = stored ? JSON.parse(stored) : {}
+      }
+
+      // 更新用户设置部分
+      const updatedSettings = {
+        ...existingSettings,
+        ...settings.value, // 为了向后兼容，将用户设置直接合并到根级别
+        userSettings: settings.value, // 同时保存到 userSettings 字段
+      }
+
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.sync.set({ aiSiderNavSettings: updatedSettings })
+      } else {
+        localStorage.setItem('aiSiderNavSettings', JSON.stringify(updatedSettings))
       }
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -142,20 +162,22 @@ export const useSettingsStore = defineStore('settings', () => {
   const setupStorageListener = () => {
     if (typeof chrome !== 'undefined' && chrome.storage) {
       chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === 'sync' && changes.userSettings) {
-          const newSettings = changes.userSettings.newValue
-          if (newSettings) {
-            settings.value = { ...defaultSettings, ...newSettings }
+        if (namespace === 'sync' && changes.aiSiderNavSettings) {
+          const newData = changes.aiSiderNavSettings.newValue
+          if (newData) {
+            const userSettings = newData.userSettings || newData
+            settings.value = { ...defaultSettings, ...userSettings }
           }
         }
       })
     } else {
       // 开发环境使用 localStorage 事件监听
       window.addEventListener('storage', (event) => {
-        if (event.key === 'userSettings' && event.newValue) {
+        if (event.key === 'aiSiderNavSettings' && event.newValue) {
           try {
-            const newSettings = JSON.parse(event.newValue)
-            settings.value = { ...defaultSettings, ...newSettings }
+            const data = JSON.parse(event.newValue)
+            const userSettings = data.userSettings || data
+            settings.value = { ...defaultSettings, ...userSettings }
           } catch (error) {
             console.error('Failed to parse settings from storage event:', error)
           }

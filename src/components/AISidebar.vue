@@ -17,6 +17,12 @@
         :class="`ai-sidebar--${aiStore.sidebarState.position}`"
         :style="sidebarStyle"
       >
+        <!-- 拖拽调整手柄 -->
+        <div
+          class="ai-sidebar-resize-handle"
+          :class="`ai-sidebar-resize-handle--${aiStore.sidebarState.position}`"
+          @mousedown="startResize"
+        ></div>
         <!-- 侧边栏头部 -->
         <div class="ai-sidebar-header">
           <div class="ai-sidebar-title">
@@ -167,6 +173,12 @@
     document.addEventListener('mouseup', stopResize)
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
+
+    // 添加拖拽样式类
+    const sidebar = document.querySelector('.ai-sidebar')
+    if (sidebar) {
+      sidebar.classList.add('resizing')
+    }
   }
 
   const handleResize = (e: MouseEvent) => {
@@ -185,6 +197,12 @@
     document.removeEventListener('mouseup', stopResize)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
+
+    // 移除拖拽样式类
+    const sidebar = document.querySelector('.ai-sidebar')
+    if (sidebar) {
+      sidebar.classList.remove('resizing')
+    }
   }
 
   // 快捷键处理
@@ -273,6 +291,48 @@
     border-left: none;
     border-right: 1px solid #e5e7eb;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 拖拽调整手柄 */
+  .ai-sidebar-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    transition: background-color 0.2s ease;
+  }
+
+  .ai-sidebar-resize-handle:hover {
+    background-color: #14b8a6;
+  }
+
+  .ai-sidebar-resize-handle--right {
+    left: 0;
+  }
+
+  .ai-sidebar-resize-handle--left {
+    right: 0;
+  }
+
+  /* 拖拽时的视觉反馈 */
+  .ai-sidebar-resize-handle:active {
+    background-color: #0d9488;
+  }
+
+  /* 拖拽时禁用文本选择 */
+  .ai-sidebar.resizing {
+    user-select: none;
+  }
+
+  .ai-sidebar.resizing * {
+    pointer-events: none;
+  }
+
+  .ai-sidebar.resizing .ai-sidebar-resize-handle {
+    pointer-events: auto;
   }
 
   /* 侧边栏头部 */

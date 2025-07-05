@@ -277,12 +277,6 @@
     // 重新发送前一条用户消息
     await handleSendMessage(previousMessage.content)
   }
-
-  // 生命周期
-  onMounted(() => {
-    // 初始化 AI 助手
-    aiStore.initialize()
-  })
 </script>
 
 <style scoped>
