@@ -84,16 +84,16 @@
     const focusInput = () => {
       if (searchInputRef.value && !userHasInteracted) {
         try {
-          // 多种聚焦方法组合使用
-          searchInputRef.value.focus()
-          searchInputRef.value.click()
-          searchInputRef.value.select()
-
-          // 确保输入框可见
-          searchInputRef.value.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          })
+          // 防止地址栏聚焦的策略
+          searchInputRef.value.focus({ preventScroll: true })
+          
+          // 使用 setTimeout 确保聚焦生效
+          setTimeout(() => {
+            if (searchInputRef.value && document.activeElement !== searchInputRef.value) {
+              searchInputRef.value.focus()
+              searchInputRef.value.click()
+            }
+          }, 0)
 
           // 设置应用状态
           appStore.setSearchFocus(true)
@@ -112,31 +112,30 @@
       }, delay)
     }
 
-    // 多次尝试聚焦，延迟时间更长，次数更多
-    scheduleFocus(100) // 立即尝试
-    scheduleFocus(300) // 第二次尝试
-    scheduleFocus(600) // 第三次尝试
-    scheduleFocus(1000) // 第四次尝试
-    scheduleFocus(1500) // 第五次尝试
-    scheduleFocus(2000) // 第六次尝试
-
+    // 立即尝试聚焦（新标签页场景）
+    scheduleFocus(0)
+    scheduleFocus(50)
+    scheduleFocus(100)
+    scheduleFocus(200)
+    scheduleFocus(500)
+    
     // 监听页面完全加载
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
-        scheduleFocus(100)
+        scheduleFocus(50)
       })
     }
 
     if (document.readyState !== 'complete') {
       window.addEventListener('load', () => {
-        scheduleFocus(100)
+        scheduleFocus(50)
       })
     }
 
     // 监听页面可见性变化，当页面变为可见时聚焦
     const handleVisibilityChange = () => {
       if (!document.hidden && !userHasInteracted) {
-        scheduleFocus(100)
+        scheduleFocus(50)
       }
     }
 
@@ -145,7 +144,7 @@
     // 监听窗口焦点事件
     const handleWindowFocus = () => {
       if (!userHasInteracted) {
-        scheduleFocus(100)
+        scheduleFocus(50)
       }
     }
 
@@ -154,11 +153,26 @@
     // 监听标签页激活事件
     const handlePageShow = () => {
       if (!userHasInteracted) {
-        scheduleFocus(100)
+        scheduleFocus(50)
       }
     }
 
     window.addEventListener('pageshow', handlePageShow)
+    
+    // 新增：监听 beforeunload 事件，确保新标签页聚焦
+    window.addEventListener('beforeunload', () => {
+      // 在页面卸载前设置标记，帮助新页面识别是否需要聚焦
+      sessionStorage.setItem('shouldFocusSearch', 'true')
+    })
+    
+    // 检查是否是新打开的标签页
+    if (sessionStorage.getItem('shouldFocusSearch') === 'true') {
+      sessionStorage.removeItem('shouldFocusSearch')
+      // 对于新标签页，更积极地尝试聚焦
+      for (let i = 0; i < 10; i++) {
+        scheduleFocus(i * 100)
+      }
+    }
   })
 </script>
 

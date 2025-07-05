@@ -35,7 +35,7 @@
             </button>
 
             <button class="close-button" @click="closeModal">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M18 6L6 18M6 6l12 12"
                   stroke="currentColor"
@@ -340,8 +340,8 @@
     background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -349,8 +349,8 @@
     cursor: pointer;
     transition: background 0.2s ease;
     position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
+    top: 0.75rem;
+    right: 0.75rem;
     z-index: 10;
   }
 
@@ -551,9 +551,16 @@
     }
 
     .close-button {
-      top: 1rem;
-      right: 1rem;
-    }
+       top: 0.5rem;
+       right: 0.5rem;
+       width: 24px;
+       height: 24px;
+     }
+
+     .close-button svg {
+       width: 14px;
+       height: 14px;
+     }
 
     .month-name {
       font-size: 1.125rem;
