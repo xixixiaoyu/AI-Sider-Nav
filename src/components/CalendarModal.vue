@@ -287,7 +287,7 @@
     border-radius: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     width: 100%;
-    max-width: 520px;
+    max-width: 600px;
     overflow: hidden;
     animation: modalSlideIn 0.3s ease-out;
   }
@@ -296,7 +296,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem;
+    padding: 1.5rem 4rem 1rem 1.5rem;
     background: linear-gradient(135deg, #79b4a6 0%, #6ba394 100%);
     color: white;
     position: relative;
@@ -349,8 +349,9 @@
     cursor: pointer;
     transition: background 0.2s ease;
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
   }
 
   .close-button:hover {
@@ -379,19 +380,19 @@
   }
 
   .calendar-date {
-    min-height: 60px;
+    min-height: 70px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: #333;
     transition: all 0.2s ease;
     border: 1px solid transparent;
     position: relative;
-    padding: 4px 2px;
+    padding: 6px 4px;
   }
 
   .calendar-date:hover {
@@ -541,12 +542,17 @@
   /* 响应式设计 */
   @media (max-width: 480px) {
     .calendar-modal {
-      max-width: 350px;
+      max-width: 380px;
       margin: 0 1rem;
     }
 
     .calendar-header {
-      padding: 1rem 1rem 0.75rem;
+      padding: 1rem 3rem 0.75rem 1rem;
+    }
+
+    .close-button {
+      top: 1rem;
+      right: 1rem;
     }
 
     .month-name {
@@ -555,6 +561,7 @@
 
     .calendar-date {
       font-size: 0.85rem;
+      min-height: 65px;
     }
 
     .today-info {
