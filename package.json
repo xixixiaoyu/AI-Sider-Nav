@@ -13,12 +13,12 @@
     "test": "vitest"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "pinia": "^2.1.7"
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
     "@types/chrome": "^0.0.268",
+    "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-vue": "^5.0.0",

@@ -1,0 +1,48 @@
+#quick-copy-button {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 2147483647; /* 最高层级 */
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  user-select: none;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-width: 40px;
+  border: none;
+  outline: none;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+#quick-copy-button:hover {
+  background-color: rgba(0, 0, 0, 0.95);
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+#quick-copy-button:active {
+  transform: scale(0.95);
+  transition: all 0.1s ease;
+}
+
+#quick-copy-button.copied {
+  background-color: rgba(76, 175, 80, 0.9);
+}
+
+#quick-copy-button.error {
+  background-color: rgba(244, 67, 54, 0.9);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  #quick-copy-button {
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 50px;
+  }
+}

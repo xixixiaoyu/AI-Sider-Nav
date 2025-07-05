@@ -76,6 +76,60 @@
             </button>
           </div>
         </div>
+
+        <!-- 文本选择复制功能 -->
+        <div class="setting-section">
+          <div class="section-title">文本复制</div>
+
+          <!-- 主开关 -->
+          <div class="toggle-option">
+            <div class="toggle-info">
+              <span class="toggle-label">启用文本选择复制</span>
+              <span class="toggle-desc">选中文本时显示复制按钮</span>
+            </div>
+            <div
+              class="toggle-switch"
+              :class="{ active: settings.textSelection.enabled }"
+              @click="toggleTextSelection"
+            >
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+
+          <!-- 详细设置 -->
+          <div v-if="settings.textSelection.enabled" class="sub-settings">
+            <!-- 显示复制按钮 -->
+            <div class="toggle-option small">
+              <span class="toggle-label">显示复制按钮</span>
+              <div
+                class="toggle-switch small"
+                :class="{ active: settings.textSelection.showCopyButton }"
+                @click="toggleShowCopyButton"
+              >
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
+
+            <!-- 成功提示选项已移除 - 用户不希望看到页面通知 -->
+
+            <!-- 自动隐藏延迟 -->
+            <div class="range-option">
+              <div class="range-info">
+                <span class="range-label">按钮自动隐藏延迟</span>
+                <span class="range-value">{{ settings.textSelection.autoHideDelay / 1000 }}秒</span>
+              </div>
+              <input
+                type="range"
+                min="500"
+                max="5000"
+                step="250"
+                :value="settings.textSelection.autoHideDelay"
+                @input="updateAutoHideDelay"
+                class="range-slider"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </Transition>
   </div>
@@ -126,6 +180,32 @@
 
   const setTimeFormat = async (format: '12h' | '24h') => {
     await settingsStore.updateSetting('timeFormat', format)
+  }
+
+  // 文本选择复制功能相关方法
+  const toggleTextSelection = async () => {
+    await settingsStore.updateSetting('textSelection', {
+      ...settings.value.textSelection,
+      enabled: !settings.value.textSelection.enabled,
+    })
+  }
+
+  const toggleShowCopyButton = async () => {
+    await settingsStore.updateSetting('textSelection', {
+      ...settings.value.textSelection,
+      showCopyButton: !settings.value.textSelection.showCopyButton,
+    })
+  }
+
+  // toggleShowSuccessMessage 方法已移除
+
+  const updateAutoHideDelay = async (event: Event) => {
+    const target = event.target as HTMLInputElement
+    const delay = parseInt(target.value)
+    await settingsStore.updateSetting('textSelection', {
+      ...settings.value.textSelection,
+      autoHideDelay: delay,
+    })
   }
 
   // 点击外部关闭面板
@@ -315,6 +395,149 @@
     background: rgba(121, 180, 166, 0.2);
     border-color: #79b4a6;
     color: #047857;
+  }
+
+  /* 文本选择复制功能样式 */
+  .toggle-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .toggle-option:last-child {
+    border-bottom: none;
+  }
+
+  .toggle-option.small {
+    padding: 0.5rem 0;
+  }
+
+  .toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .toggle-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .toggle-option.small .toggle-label {
+    font-size: 0.8rem;
+  }
+
+  .toggle-desc {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-switch.small {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+  }
+
+  .toggle-switch.active {
+    background: #79b4a6;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .toggle-switch.small .toggle-slider {
+    width: 16px;
+    height: 16px;
+  }
+
+  .toggle-switch.active .toggle-slider {
+    transform: translateX(20px);
+  }
+
+  .toggle-switch.small.active .toggle-slider {
+    transform: translateX(16px);
+  }
+
+  .sub-settings {
+    margin-top: 0.75rem;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(121, 180, 166, 0.2);
+  }
+
+  .range-option {
+    padding: 0.75rem 0;
+  }
+
+  .range-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .range-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .range-value {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  .range-slider {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: #e5e7eb;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #79b4a6;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .range-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #79b4a6;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   /* 动画 */

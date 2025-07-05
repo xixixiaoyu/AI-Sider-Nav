@@ -8,6 +8,9 @@
     <!-- 设置面板 -->
     <SettingsPanel />
 
+    <!-- 文本选择复制功能 -->
+    <TextSelectionCopy />
+
     <!-- 主要内容 -->
     <div class="main-content">
       <!-- 时间显示区域 -->
@@ -30,6 +33,7 @@
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
   import SettingsPanel from '@/components/SettingsPanel.vue'
+  import TextSelectionCopy from '@/components/TextSelectionCopy.vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()

@@ -18,6 +18,14 @@ export interface UserSettings {
     weekStartsOn: 'monday' | 'sunday'
     showWeekNumbers: boolean
   }
+  // 文本选择复制功能设置
+  textSelection: {
+    enabled: boolean
+    showCopyButton: boolean
+    autoHideDelay: number // 复制按钮自动隐藏延迟（毫秒）
+    minSelectionLength: number // 最小选择文本长度
+    showSuccessMessage: boolean // 是否显示复制成功提示
+  }
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -33,6 +41,13 @@ export const useSettingsStore = defineStore('settings', () => {
       enabled: true,
       weekStartsOn: 'monday',
       showWeekNumbers: false,
+    },
+    textSelection: {
+      enabled: true,
+      showCopyButton: true,
+      autoHideDelay: 2000,
+      minSelectionLength: 1,
+      showSuccessMessage: false,
     },
   }
 
