@@ -1,0 +1,263 @@
+/* Popup 页面专用样式 */
+
+/* 基础重置 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  min-height: 480px;
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+}
+
+/* 搜索引擎选择样式 */
+.engine-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.engine-option {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.engine-option:hover {
+  background: #f9fafb;
+  border-color: #79b4a6;
+}
+
+.engine-option.active {
+  background: #79b4a6;
+  border-color: #79b4a6;
+  color: white;
+}
+
+.engine-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.engine-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.check-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.9;
+}
+
+/* 时间格式按钮样式 */
+.format-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.format-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.format-button:hover {
+  border-color: #79b4a6;
+  background: #f0f9f7;
+}
+
+.format-button.active {
+  background: #79b4a6;
+  border-color: #79b4a6;
+  color: white;
+}
+
+/* 开关样式 */
+.toggle-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.toggle-option:last-child {
+  border-bottom: none;
+}
+
+.toggle-info {
+  flex: 1;
+}
+
+.toggle-label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 2px;
+}
+
+.toggle-desc {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: #e5e7eb;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-switch.active {
+  background: #79b4a6;
+}
+
+.toggle-slider {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch.active .toggle-slider {
+  transform: translateX(20px);
+}
+
+/* 子设置样式 */
+.sub-settings {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.toggle-option.small {
+  padding: 8px 0;
+}
+
+.toggle-switch.small {
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch.small .toggle-slider {
+  width: 16px;
+  height: 16px;
+}
+
+.toggle-switch.small.active .toggle-slider {
+  transform: translateX(16px);
+}
+
+/* 滑块样式 */
+.range-option {
+  margin-top: 12px;
+}
+
+.range-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.range-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.range-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: #79b4a6;
+}
+
+.range-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #79b4a6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #79b4a6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 焦点样式 */
+:focus-visible {
+  outline: 2px solid #79b4a6;
+  outline-offset: 2px;
+}

@@ -5,9 +5,6 @@
       <div class="background-gradient"></div>
     </div>
 
-    <!-- 设置面板 -->
-    <SettingsPanel />
-
     <!-- 文本选择复制功能 -->
     <TextSelectionCopy />
 
@@ -32,7 +29,6 @@
   import { onMounted } from 'vue'
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
-  import SettingsPanel from '@/components/SettingsPanel.vue'
   import TextSelectionCopy from '@/components/TextSelectionCopy.vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 

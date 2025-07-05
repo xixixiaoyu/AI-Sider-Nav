@@ -68,10 +68,97 @@
   // 组件挂载后自动聚焦到搜索框
   onMounted(async () => {
     await nextTick()
-    // 延迟一点时间确保动画完成后再聚焦
-    setTimeout(() => {
-      searchInputRef.value?.focus()
-    }, 400) // 等待 slideInUp 动画完成
+
+    // 用户交互检测
+    let userHasInteracted = false
+    const markUserInteraction = () => {
+      userHasInteracted = true
+    }
+
+    // 监听用户交互事件
+    document.addEventListener('keydown', markUserInteraction, { once: true })
+    document.addEventListener('mousedown', markUserInteraction, { once: true })
+    document.addEventListener('touchstart', markUserInteraction, { once: true })
+
+    // 强力聚焦函数
+    const focusInput = () => {
+      if (searchInputRef.value && !userHasInteracted) {
+        try {
+          // 多种聚焦方法组合使用
+          searchInputRef.value.focus()
+          searchInputRef.value.click()
+          searchInputRef.value.select()
+
+          // 确保输入框可见
+          searchInputRef.value.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+
+          // 设置应用状态
+          appStore.setSearchFocus(true)
+        } catch (error) {
+          console.warn('Focus attempt failed:', error)
+        }
+      }
+    }
+
+    // 使用 requestAnimationFrame 确保渲染完成
+    const scheduleFocus = (delay: number) => {
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          focusInput()
+        })
+      }, delay)
+    }
+
+    // 多次尝试聚焦，延迟时间更长，次数更多
+    scheduleFocus(100) // 立即尝试
+    scheduleFocus(300) // 第二次尝试
+    scheduleFocus(600) // 第三次尝试
+    scheduleFocus(1000) // 第四次尝试
+    scheduleFocus(1500) // 第五次尝试
+    scheduleFocus(2000) // 第六次尝试
+
+    // 监听页面完全加载
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        scheduleFocus(100)
+      })
+    }
+
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', () => {
+        scheduleFocus(100)
+      })
+    }
+
+    // 监听页面可见性变化，当页面变为可见时聚焦
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !userHasInteracted) {
+        scheduleFocus(100)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // 监听窗口焦点事件
+    const handleWindowFocus = () => {
+      if (!userHasInteracted) {
+        scheduleFocus(100)
+      }
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+
+    // 监听标签页激活事件
+    const handlePageShow = () => {
+      if (!userHasInteracted) {
+        scheduleFocus(100)
+      }
+    }
+
+    window.addEventListener('pageshow', handlePageShow)
   })
 </script>
 

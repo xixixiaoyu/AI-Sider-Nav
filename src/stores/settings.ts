@@ -138,6 +138,32 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings()
   }
 
+  // 设置存储监听器
+  const setupStorageListener = () => {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'sync' && changes.userSettings) {
+          const newSettings = changes.userSettings.newValue
+          if (newSettings) {
+            settings.value = { ...defaultSettings, ...newSettings }
+          }
+        }
+      })
+    } else {
+      // 开发环境使用 localStorage 事件监听
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'userSettings' && event.newValue) {
+          try {
+            const newSettings = JSON.parse(event.newValue)
+            settings.value = { ...defaultSettings, ...newSettings }
+          } catch (error) {
+            console.error('Failed to parse settings from storage event:', error)
+          }
+        }
+      })
+    }
+  }
+
   return {
     settings,
     isLoading,
@@ -148,5 +174,6 @@ export const useSettingsStore = defineStore('settings', () => {
     resetSettings,
     addCustomSearchEngine,
     removeCustomSearchEngine,
+    setupStorageListener,
   }
 })

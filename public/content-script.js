@@ -24,6 +24,8 @@
   class QuickCopyButton {
     constructor() {
       this.button = null
+      this.isEnabled = false
+      this.settings = null
 
       // 预绑定事件处理函数，便于后续移除
       this.boundHandleMouseUp = this.handleMouseUp.bind(this)
@@ -37,9 +39,68 @@
     /**
      * 初始化复制按钮和事件监听
      */
-    init() {
-      this.createButton()
-      this.setupEventListeners()
+    async init() {
+      await this.loadSettings()
+      if (this.isEnabled) {
+        this.createButton()
+        this.setupEventListeners()
+      }
+      this.setupStorageListener()
+    }
+
+    /**
+     * 加载用户设置
+     */
+    async loadSettings() {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+          const result = await chrome.storage.sync.get('userSettings')
+          this.settings = result.userSettings || {}
+        } else {
+          // 开发环境使用 localStorage
+          const stored = localStorage.getItem('userSettings')
+          this.settings = stored ? JSON.parse(stored) : {}
+        }
+
+        // 检查文本选择复制功能是否启用
+        this.isEnabled = this.settings.textSelection?.enabled !== false
+      } catch (error) {
+        console.error('Failed to load settings:', error)
+        // 默认启用
+        this.isEnabled = true
+      }
+    }
+
+    /**
+     * 设置存储监听器
+     */
+    setupStorageListener() {
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+          if (namespace === 'sync' && changes.userSettings) {
+            const newSettings = changes.userSettings.newValue
+            if (newSettings) {
+              this.settings = newSettings
+              const newEnabled = newSettings.textSelection?.enabled !== false
+
+              if (newEnabled !== this.isEnabled) {
+                this.isEnabled = newEnabled
+                if (this.isEnabled) {
+                  // 启用功能
+                  if (!this.button) {
+                    this.createButton()
+                    this.setupEventListeners()
+                  }
+                } else {
+                  // 禁用功能
+                  this.hide()
+                  this.destroy()
+                }
+              }
+            }
+          }
+        })
+      }
     }
 
     /**
@@ -74,7 +135,7 @@
         .then(() => {
           this.updateButtonState(true)
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('复制失败:', err)
           this.updateButtonState(false)
         })
@@ -92,11 +153,13 @@
         this.button.classList.add('error')
       }
 
+      // 使用用户设置的自动隐藏延迟
+      const hideDelay = this.settings.textSelection?.autoHideDelay || 2000
       setTimeout(() => {
         this.button.textContent = CONFIG.labels.copy
         this.button.classList.remove('copied', 'error')
         this.hide()
-      }, CONFIG.transitionDuration)
+      }, hideDelay)
     }
 
     /**
@@ -157,16 +220,20 @@
      * 处理鼠标抬起事件
      */
     handleMouseUp(event) {
-      if (event.target === this.button) return
+      if (!this.isEnabled || event.target === this.button) return
 
       setTimeout(() => {
         const selection = window.getSelection()
         if (selection.toString().trim()) {
-          // 获取选择区域的位置
-          if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0)
-            const rect = range.getBoundingClientRect()
-            this.show(selection, rect)
+          // 检查是否显示复制按钮
+          const showButton = this.settings.textSelection?.showCopyButton !== false
+          if (showButton) {
+            // 获取选择区域的位置
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0)
+              const rect = range.getBoundingClientRect()
+              this.show(selection, rect)
+            }
           }
         } else {
           this.hide()
@@ -214,6 +281,8 @@
     }
   }
 
-  // 初始化并暴露实例到全局作用域（如有需要）
-  window.quickCopy = new QuickCopyButton()
+  // 异步初始化并暴露实例到全局作用域（如有需要）
+  ;(async () => {
+    window.quickCopy = new QuickCopyButton()
+  })()
 })()

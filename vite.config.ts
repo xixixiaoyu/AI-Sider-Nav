@@ -17,9 +17,16 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        popup: resolve(__dirname, 'src/popup.ts'),
       },
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: (chunkInfo) => {
+          // popup 入口文件直接输出为 popup.js
+          if (chunkInfo.name === 'popup') {
+            return 'popup.js'
+          }
+          return 'assets/[name]-[hash].js'
+        },
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
