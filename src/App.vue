@@ -8,6 +8,12 @@
     <!-- 文本选择复制功能 -->
     <TextSelectionCopy />
 
+    <!-- AI 助手侧边栏 -->
+    <AISidebar />
+
+    <!-- AI 助手触发按钮 -->
+    <AISidebarTrigger />
+
     <!-- 主要内容 -->
     <div class="main-content">
       <!-- 时间显示区域 -->
@@ -30,10 +36,13 @@
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
   import TextSelectionCopy from '@/components/TextSelectionCopy.vue'
-  import { useAppStore, useSettingsStore } from '@/stores'
+  import AISidebar from '@/components/AISidebar.vue'
+  import AISidebarTrigger from '@/components/AISidebarTrigger.vue'
+  import { useAppStore, useSettingsStore, useAIAssistantStore } from '@/stores'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
+  const aiAssistantStore = useAIAssistantStore()
 
   // 应用初始化
   onMounted(async () => {
@@ -42,6 +51,9 @@
 
     // 加载搜索历史
     await appStore.loadSearchHistory()
+
+    // 初始化 AI 助手
+    await aiAssistantStore.initialize()
   })
 </script>
 
