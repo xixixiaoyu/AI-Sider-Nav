@@ -299,7 +299,14 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       if (data) {
         if (data.settings) settings.value = { ...settings.value, ...data.settings }
         if (data.shortcuts) shortcuts.value = { ...shortcuts.value, ...data.shortcuts }
-        if (data.sidebarState) sidebarState.value = { ...sidebarState.value, ...data.sidebarState }
+        if (data.sidebarState) {
+          // 恢复侧边栏设置，但确保新标签页打开时侧边栏是关闭状态
+          sidebarState.value = { 
+            ...sidebarState.value, 
+            ...data.sidebarState,
+            isOpen: false // 强制设置为关闭状态
+          }
+        }
       }
     } catch (error) {
       console.error('加载 AI 助手设置失败:', error)
