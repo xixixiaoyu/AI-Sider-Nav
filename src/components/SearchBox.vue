@@ -80,99 +80,139 @@
     document.addEventListener('mousedown', markUserInteraction, { once: true })
     document.addEventListener('touchstart', markUserInteraction, { once: true })
 
-    // 强力聚焦函数
-    const focusInput = () => {
+    // 强力聚焦函数 - 参考浏览器扩展的实现原理
+    const aggressiveFocus = () => {
       if (searchInputRef.value && !userHasInteracted) {
         try {
-          // 防止地址栏聚焦的策略
-          searchInputRef.value.focus({ preventScroll: true })
+          // 核心策略：强行从地址栏"抢夺"焦点
+          const input = searchInputRef.value
           
-          // 使用 setTimeout 确保聚焦生效
-          setTimeout(() => {
-            if (searchInputRef.value && document.activeElement !== searchInputRef.value) {
-              searchInputRef.value.focus()
-              searchInputRef.value.click()
-            }
-          }, 0)
-
+          // 1. 立即聚焦
+          input.focus({ preventScroll: true })
+          
+          // 2. 模拟点击以确保聚焦
+          input.click()
+          
+          // 3. 设置 tabindex 确保可聚焦
+          input.setAttribute('tabindex', '0')
+          
+          // 4. 强制选中内容（如果有的话）
+          input.select()
+          
+          // 5. 触发焦点事件
+          input.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+          
+          // 6. 确保输入框可见
+          input.scrollIntoView({ behavior: 'instant', block: 'center' })
+          
           // 设置应用状态
           appStore.setSearchFocus(true)
+          
+          console.log('Focus attempt completed, active element:', document.activeElement)
         } catch (error) {
           console.warn('Focus attempt failed:', error)
         }
       }
     }
 
-    // 使用 requestAnimationFrame 确保渲染完成
+    // 延迟聚焦策略 - 关键是在浏览器完成默认行为后执行
     const scheduleFocus = (delay: number) => {
       setTimeout(() => {
         requestAnimationFrame(() => {
-          focusInput()
+          aggressiveFocus()
         })
       }, delay)
     }
 
-    // 立即尝试聚焦（新标签页场景）
-    scheduleFocus(0)
-    scheduleFocus(50)
-    scheduleFocus(100)
-    scheduleFocus(200)
-    scheduleFocus(500)
+    // 多重聚焦尝试 - 模拟扩展的延迟策略
+    const focusAttempts = [0, 50, 100, 150, 200, 300, 500, 800, 1000]
+    focusAttempts.forEach(delay => scheduleFocus(delay))
     
-    // 监听页面完全加载
+    // 监听页面加载状态
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
         scheduleFocus(50)
+        scheduleFocus(100)
       })
     }
 
     if (document.readyState !== 'complete') {
       window.addEventListener('load', () => {
+        // 页面完全加载后再次尝试聚焦
         scheduleFocus(50)
+        scheduleFocus(150)
       })
     }
 
-    // 监听页面可见性变化，当页面变为可见时聚焦
+    // 监听页面可见性变化
     const handleVisibilityChange = () => {
       if (!document.hidden && !userHasInteracted) {
         scheduleFocus(50)
+        scheduleFocus(100)
       }
     }
-
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // 监听窗口焦点事件
+    // 监听窗口焦点事件 - 新标签页激活时触发
     const handleWindowFocus = () => {
       if (!userHasInteracted) {
         scheduleFocus(50)
+        scheduleFocus(100)
+        scheduleFocus(200)
       }
     }
-
     window.addEventListener('focus', handleWindowFocus)
 
-    // 监听标签页激活事件
-    const handlePageShow = () => {
+    // 监听标签页显示事件
+    const handlePageShow = (event: PageTransitionEvent) => {
       if (!userHasInteracted) {
-        scheduleFocus(50)
+        // 如果是从缓存恢复的页面，更积极地聚焦
+        const delay = event.persisted ? 50 : 100
+        scheduleFocus(delay)
+        scheduleFocus(delay + 50)
       }
     }
-
     window.addEventListener('pageshow', handlePageShow)
     
-    // 新增：监听 beforeunload 事件，确保新标签页聚焦
-    window.addEventListener('beforeunload', () => {
-      // 在页面卸载前设置标记，帮助新页面识别是否需要聚焦
-      sessionStorage.setItem('shouldFocusSearch', 'true')
-    })
+    // 检测新标签页场景
+    const isNewTab = () => {
+      // 检查是否是新打开的标签页
+      return document.referrer === '' && window.history.length === 1
+    }
     
-    // 检查是否是新打开的标签页
-    if (sessionStorage.getItem('shouldFocusSearch') === 'true') {
-      sessionStorage.removeItem('shouldFocusSearch')
-      // 对于新标签页，更积极地尝试聚焦
-      for (let i = 0; i < 10; i++) {
+    // 如果是新标签页，使用更激进的聚焦策略
+    if (isNewTab()) {
+      console.log('Detected new tab, applying aggressive focus strategy')
+      // 立即开始多次聚焦尝试
+      for (let i = 0; i < 15; i++) {
         scheduleFocus(i * 100)
       }
+      
+      // 额外的延迟聚焦，确保在所有浏览器行为完成后执行
+      setTimeout(() => {
+        for (let i = 0; i < 5; i++) {
+          scheduleFocus(i * 200)
+        }
+      }, 1000)
     }
+    
+    // 持续监控焦点状态
+    const focusMonitor = setInterval(() => {
+      if (userHasInteracted) {
+        clearInterval(focusMonitor)
+        return
+      }
+      
+      // 如果焦点不在我们的输入框上，尝试重新聚焦
+      if (document.activeElement !== searchInputRef.value && searchInputRef.value) {
+        aggressiveFocus()
+      }
+    }, 500)
+    
+    // 5秒后停止监控
+    setTimeout(() => {
+      clearInterval(focusMonitor)
+    }, 5000)
   })
 </script>
 
