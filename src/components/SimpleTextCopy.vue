@@ -56,8 +56,8 @@
 
           buttonStyle.value = {
             position: 'fixed' as const,
-            top: `${rect.top - 40}px`,
-            left: `${rect.left + rect.width / 2 - 25}px`,
+            top: `${rect.bottom + 8}px`,
+            left: `${rect.right + 8}px`,
             zIndex: 9999,
           }
 

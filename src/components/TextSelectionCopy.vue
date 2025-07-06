@@ -111,12 +111,12 @@
         return
       }
 
-      // 计算按钮位置
-      const buttonTop = rect.top + window.scrollY - 50
-      const buttonLeft = rect.left + window.scrollX + rect.width / 2 - 40
+      // 计算按钮位置 - 放在选中文本的右下角
+      const buttonTop = rect.bottom + window.scrollY + 8
+      const buttonLeft = rect.right + window.scrollX + 8
 
       buttonPosition.value = {
-        top: `${Math.max(10, buttonTop)}px`,
+        top: `${Math.max(10, Math.min(window.innerHeight - 60, buttonTop))}px`,
         left: `${Math.max(10, Math.min(window.innerWidth - 90, buttonLeft))}px`,
       }
 
