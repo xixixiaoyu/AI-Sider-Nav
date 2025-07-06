@@ -456,7 +456,7 @@
     const button = document.createElement('div')
     button.id = 'ai-sider-nav-trigger'
     button.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path
           d="M12 2L2 7L12 12L22 7L12 2Z"
           stroke="currentColor"
@@ -486,14 +486,14 @@
       position: 'fixed',
       bottom: '20px',
       right: '20px',
-      width: '48px',
-      height: '48px',
-      borderRadius: '24px',
+      width: '36px',
+      height: '36px',
+      borderRadius: '18px',
       background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
       color: 'white',
       border: 'none',
       cursor: 'pointer',
-      boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)',
+      boxShadow: '0 2px 6px rgba(20, 184, 166, 0.15)',
       zIndex: '999999',
       display: 'flex',
       alignItems: 'center',
@@ -506,12 +506,12 @@
     // 悬停效果
     button.addEventListener('mouseenter', () => {
       button.style.transform = 'scale(1.1)'
-      button.style.boxShadow = '0 6px 20px rgba(20, 184, 166, 0.4)'
+      button.style.boxShadow = '0 3px 10px rgba(20, 184, 166, 0.25)'
     })
 
     button.addEventListener('mouseleave', () => {
       button.style.transform = 'scale(1)'
-      button.style.boxShadow = '0 4px 12px rgba(20, 184, 166, 0.3)'
+      button.style.boxShadow = '0 2px 6px rgba(20, 184, 166, 0.15)'
     })
 
     // 点击事件
@@ -903,7 +903,13 @@
             : 'background: #f3f4f6; color: #1f2937; margin-right: 40px;'
         }
       `
-      messageContent.textContent = content
+
+      // 如果是 AI 消息，渲染 Markdown；如果是用户消息，使用纯文本
+      if (isUser) {
+        messageContent.textContent = content
+      } else {
+        messageContent.innerHTML = formatMarkdown(content)
+      }
 
       messageDiv.appendChild(avatar)
       messageDiv.appendChild(messageContent)
@@ -918,6 +924,93 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight
 
       return messageDiv
+    }
+
+    // 简单的 Markdown 格式化函数
+    function formatMarkdown(text) {
+      // 先处理代码块，避免其中的内容被误处理
+      const codeBlocks = []
+      let codeBlockIndex = 0
+
+      // 提取代码块
+      text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`
+        codeBlocks[codeBlockIndex] = {
+          lang: lang || '',
+          code: code.trim(),
+          isSpecial: lang === 'mermaid',
+        }
+        codeBlockIndex++
+        return placeholder
+      })
+
+      // 处理其他 Markdown 格式
+      text = text
+        // 转义 HTML 特殊字符（但保留代码块占位符）
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        // 处理标题
+        .replace(
+          /^### (.*$)/gm,
+          '<h3 style="margin: 16px 0 8px 0; font-size: 16px; font-weight: 600; color: #1f2937;">$1</h3>'
+        )
+        .replace(
+          /^## (.*$)/gm,
+          '<h2 style="margin: 20px 0 12px 0; font-size: 18px; font-weight: 600; color: #1f2937;">$1</h2>'
+        )
+        .replace(
+          /^# (.*$)/gm,
+          '<h1 style="margin: 24px 0 16px 0; font-size: 20px; font-weight: 600; color: #1f2937;">$1</h1>'
+        )
+        // 处理粗体
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 600;">$1</strong>')
+        // 处理斜体
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // 处理行内代码
+        .replace(
+          /`([^`]+)`/g,
+          '<code style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 13px;">$1</code>'
+        )
+        // 处理列表项
+        .replace(/^- (.*$)/gm, '<li style="margin: 4px 0;">$1</li>')
+        .replace(/^(\d+)\. (.*$)/gm, '<li style="margin: 4px 0; list-style-type: decimal;">$2</li>')
+        // 处理换行
+        .replace(/\n\n/g, '</p><p style="margin: 8px 0;">')
+        .replace(/\n/g, '<br>')
+
+      // 恢复代码块
+      text = text.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+        const block = codeBlocks[index]
+        if (block.isSpecial && block.lang === 'mermaid') {
+          return `<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 12px 0; border-left: 4px solid #79b4a6;">
+            <div style="font-weight: 600; color: #79b4a6; margin-bottom: 8px;">📊 Mermaid 图表</div>
+            <pre style="background: #fff; padding: 12px; border-radius: 4px; overflow-x: auto; font-family: monospace; font-size: 12px; line-height: 1.4;"><code>${block.code}</code></pre>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">💡 此图表可在支持 Mermaid 的编辑器中渲染</div>
+          </div>`
+        } else {
+          return `<pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin: 8px 0; overflow-x: auto; border-left: 3px solid #79b4a6;"><code>${block.code}</code></pre>`
+        }
+      })
+
+      // 处理列表包装
+      text = text.replace(
+        /(<li[^>]*>.*?<\/li>)/gs,
+        '<ul style="margin: 8px 0; padding-left: 20px;">$1</ul>'
+      )
+
+      // 包装段落
+      if (
+        !text.includes('<h1>') &&
+        !text.includes('<h2>') &&
+        !text.includes('<h3>') &&
+        !text.includes('<ul>') &&
+        !text.includes('<pre>')
+      ) {
+        text = `<p style="margin: 8px 0;">${text}</p>`
+      }
+
+      return text
     }
 
     // 显示加载状态
@@ -1228,6 +1321,292 @@
       `
       document.head.appendChild(style)
     }
+  }
+
+  // 页面内容提取功能
+  function extractPageContent() {
+    try {
+      // 基本页面信息
+      const title = document.title || document.querySelector('h1')?.textContent?.trim() || '无标题'
+      const url = window.location.href
+
+      // 提取主要内容
+      const mainContent = extractMainContent()
+
+      // 提取图片信息
+      const images = extractImages()
+
+      // 提取表格信息
+      const tables = extractTables()
+
+      // 提取列表信息
+      const lists = extractLists()
+
+      // 提取页面结构
+      const structure = extractPageStructure()
+
+      // 计算元数据
+      const wordCount = countWords(mainContent)
+      const readingTime = Math.ceil(wordCount / 200)
+
+      return {
+        title,
+        url,
+        mainContent,
+        images,
+        tables,
+        lists,
+        metadata: {
+          description:
+            document.querySelector('meta[name="description"]')?.getAttribute('content') || '',
+          keywords: document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '',
+          author: document.querySelector('meta[name="author"]')?.getAttribute('content') || '',
+          language: document.documentElement.lang || 'zh-CN',
+          wordCount,
+          readingTime,
+        },
+        structure,
+      }
+    } catch (error) {
+      console.error('提取页面内容失败:', error)
+      return null
+    }
+  }
+
+  // 提取主要内容
+  function extractMainContent() {
+    const excludeSelectors = [
+      'nav',
+      'header',
+      'footer',
+      '.navigation',
+      '.nav',
+      '.menu',
+      '.sidebar',
+      '.advertisement',
+      '.ads',
+      '.ad',
+      '.social',
+      '.share',
+      '.comments',
+      '.comment',
+      '.related',
+      '.popup',
+      '.modal',
+      '.overlay',
+      'script',
+      'style',
+      'noscript',
+    ]
+
+    // 尝试找到主要内容区域
+    const mainSelectors = [
+      'main',
+      '[role="main"]',
+      '.main-content',
+      '.content',
+      '.post-content',
+      '.article-content',
+      '.entry-content',
+      'article',
+      '.article',
+    ]
+
+    let mainElement = null
+    for (const selector of mainSelectors) {
+      mainElement = document.querySelector(selector)
+      if (mainElement) break
+    }
+
+    if (!mainElement) {
+      mainElement = document.body
+    }
+
+    // 克隆元素以避免修改原始 DOM
+    const clone = mainElement.cloneNode(true)
+
+    // 移除不需要的元素
+    excludeSelectors.forEach((selector) => {
+      const elements = clone.querySelectorAll(selector)
+      elements.forEach((el) => el.remove())
+    })
+
+    // 提取文本并清理
+    let text = clone.textContent || ''
+    text = text
+      .replace(/\s+/g, ' ')
+      .replace(/\n\s*\n/g, '\n\n')
+      .trim()
+
+    return text
+  }
+
+  // 提取图片信息
+  function extractImages() {
+    const images = []
+    const imgElements = document.querySelectorAll('img')
+
+    imgElements.forEach((img) => {
+      if (!img.src || img.src.startsWith('data:')) return
+
+      const imageInfo = {
+        src: img.src,
+        alt: img.alt || '',
+        title: img.title || '',
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+      }
+
+      // 查找图片说明
+      const figure = img.closest('figure')
+      if (figure) {
+        const figcaption = figure.querySelector('figcaption')
+        if (figcaption) {
+          imageInfo.caption = figcaption.textContent?.trim()
+        }
+      }
+
+      images.push(imageInfo)
+    })
+
+    return images.slice(0, 10) // 限制图片数量
+  }
+
+  // 提取表格信息
+  function extractTables() {
+    const tables = []
+    const tableElements = document.querySelectorAll('table')
+
+    tableElements.forEach((table) => {
+      const headers = []
+      const rows = []
+
+      // 提取表头
+      const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th')
+      headerCells.forEach((cell) => {
+        headers.push(cell.textContent?.trim() || '')
+      })
+
+      // 提取数据行
+      const dataRows = table.querySelectorAll('tbody tr, tr')
+      dataRows.forEach((row, index) => {
+        if (index === 0 && headerCells.length > 0) return
+
+        const cells = row.querySelectorAll('td, th')
+        const rowData = []
+        cells.forEach((cell) => {
+          rowData.push(cell.textContent?.trim() || '')
+        })
+        if (rowData.length > 0) {
+          rows.push(rowData)
+        }
+      })
+
+      if (headers.length > 0 || rows.length > 0) {
+        const tableInfo = { headers, rows }
+
+        // 查找表格标题
+        const caption = table.querySelector('caption')
+        if (caption) {
+          tableInfo.caption = caption.textContent?.trim()
+        }
+
+        tables.push(tableInfo)
+      }
+    })
+
+    return tables.slice(0, 5) // 限制表格数量
+  }
+
+  // 提取列表信息
+  function extractLists() {
+    const lists = []
+    const listElements = document.querySelectorAll('ul, ol')
+
+    listElements.forEach((list) => {
+      const items = []
+      const listItems = list.querySelectorAll('li')
+
+      listItems.forEach((item) => {
+        const text = item.textContent?.trim()
+        if (text) {
+          items.push(text)
+        }
+      })
+
+      if (items.length > 0) {
+        const listInfo = {
+          type: list.tagName.toLowerCase() === 'ol' ? 'ordered' : 'unordered',
+          items: items.slice(0, 10), // 限制列表项数量
+        }
+
+        // 查找列表标题
+        const prevElement = list.previousElementSibling
+        if (prevElement && /^h[1-6]$/i.test(prevElement.tagName)) {
+          listInfo.title = prevElement.textContent?.trim()
+        }
+
+        lists.push(listInfo)
+      }
+    })
+
+    return lists.slice(0, 5) // 限制列表数量
+  }
+
+  // 提取页面结构
+  function extractPageStructure() {
+    const headings = []
+    const sections = []
+
+    // 提取标题
+    const headingElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6')
+    headingElements.forEach((heading) => {
+      const level = parseInt(heading.tagName.charAt(1))
+      const text = heading.textContent?.trim()
+      if (text) {
+        headings.push({
+          level,
+          text,
+          id: heading.id || '',
+        })
+      }
+    })
+
+    return { headings, sections }
+  }
+
+  // 计算字数
+  function countWords(text) {
+    if (!text) return 0
+
+    // 中文字符按字计算，英文按单词计算
+    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
+    const englishWords = text
+      .replace(/[\u4e00-\u9fa5]/g, '')
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length
+
+    return chineseChars + englishWords
+  }
+
+  // 监听来自扩展的消息
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'EXTRACT_PAGE_CONTENT') {
+        const content = extractPageContent()
+        if (content) {
+          // 发送提取的内容回扩展
+          chrome.runtime.sendMessage({
+            type: 'PAGE_CONTENT_EXTRACTED',
+            content: content,
+          })
+          sendResponse({ success: true })
+        } else {
+          sendResponse({ success: false, error: '内容提取失败' })
+        }
+      }
+      return true
+    })
   }
 
   // 等待 DOM 加载完成

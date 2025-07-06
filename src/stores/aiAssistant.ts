@@ -9,6 +9,7 @@ import {
   AIResponseState,
 } from '../types'
 import { generateChatTitle } from '../services/aiAnalysisService'
+import { SummaryResult } from '../services/summaryService'
 
 export const useAIAssistantStore = defineStore('aiAssistant', () => {
   // 侧边栏状态
@@ -67,6 +68,14 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     currentResponse: '',
     thinkingContent: '',
     error: null,
+  })
+
+  // 页面总结状态
+  const summaryState = ref({
+    isExtracting: false,
+    isSummarizing: false,
+    currentSummary: null as SummaryResult | null,
+    error: null as string | null,
   })
 
   // 计算属性
@@ -412,6 +421,88 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     }
   }
 
+  // 页面总结操作
+  const setSummaryExtracting = (isExtracting: boolean) => {
+    summaryState.value.isExtracting = isExtracting
+  }
+
+  const setSummarizing = (isSummarizing: boolean) => {
+    summaryState.value.isSummarizing = isSummarizing
+  }
+
+  const setSummaryResult = (summary: SummaryResult | null) => {
+    summaryState.value.currentSummary = summary
+  }
+
+  const setSummaryError = (error: string | null) => {
+    summaryState.value.error = error
+  }
+
+  const clearSummary = () => {
+    summaryState.value.currentSummary = null
+    summaryState.value.error = null
+    summaryState.value.isExtracting = false
+    summaryState.value.isSummarizing = false
+  }
+
+  // 开始页面总结
+  const startPageSummary = async () => {
+    try {
+      // 清除之前的状态
+      clearSummary()
+      setSummaryExtracting(true)
+
+      // 向 content script 发送消息请求提取页面内容
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+        if (tab.id) {
+          chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_PAGE_CONTENT' })
+        }
+      } else {
+        // 开发环境或无权限时的处理
+        setSummaryError('无法访问当前页面内容')
+        setSummaryExtracting(false)
+      }
+    } catch (error) {
+      console.error('开始页面总结失败:', error)
+      setSummaryError(error instanceof Error ? error.message : '未知错误')
+      setSummaryExtracting(false)
+    }
+  }
+
+  // 处理提取的页面内容
+  const handleExtractedContent = async (content: any) => {
+    try {
+      setSummaryExtracting(false)
+      setSummarizing(true)
+
+      // 动态导入总结服务
+      const { createSummaryService } = await import('../services/summaryService')
+      const summaryService = createSummaryService()
+
+      // 进行总结
+      const result = await summaryService.summarizeContent(content, (chunk) => {
+        // 可以在这里处理流式更新
+        console.log('Summary chunk:', chunk)
+      })
+
+      setSummaryResult(result)
+      setSummarizing(false)
+
+      // 将总结结果添加到当前对话中
+      if (result.summary) {
+        addMessage({
+          role: 'assistant',
+          content: `📄 **页面总结**\n\n**${result.title}**\n\n${result.summary}\n\n**关键要点：**\n${result.keyPoints.map((point, index) => `${index + 1}. ${point}`).join('\n')}`,
+        })
+      }
+    } catch (error) {
+      console.error('处理页面内容失败:', error)
+      setSummaryError(error instanceof Error ? error.message : '总结失败')
+      setSummarizing(false)
+    }
+  }
+
   // 初始化
   const initialize = async () => {
     await loadSettings()
@@ -427,6 +518,17 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       const sortedSessions = [...chatSessions.value].sort((a, b) => b.updatedAt - a.updatedAt)
       currentSessionId.value = sortedSessions[0].id
     }
+
+    // 监听来自 content script 的消息
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'PAGE_CONTENT_EXTRACTED') {
+          handleExtractedContent(message.content)
+          sendResponse({ success: true })
+        }
+        return true
+      })
+    }
   }
 
   return {
@@ -437,6 +539,7 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     chatSessions,
     currentSessionId,
     responseState,
+    summaryState,
 
     // 计算属性
     currentSession,
@@ -468,6 +571,15 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     appendResponseContent,
     setThinkingContent,
     setResponseError,
+
+    // 页面总结操作
+    setSummaryExtracting,
+    setSummarizing,
+    setSummaryResult,
+    setSummaryError,
+    clearSummary,
+    startPageSummary,
+    handleExtractedContent,
 
     // 设置操作
     updateSettings,

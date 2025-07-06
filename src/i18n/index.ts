@@ -50,6 +50,18 @@ const messages: Record<string, I18nMessages> = {
     confirmDeleteMessage: '确定要删除这条消息吗？',
     deleteSession: '删除对话',
 
+    // 页面总结
+    summarizePage: '总结页面',
+    extractingContent: '正在提取页面内容...',
+    summarizingContent: '正在生成总结...',
+    summaryComplete: '总结完成',
+    summaryError: '总结失败',
+    pageSummary: '页面总结',
+    keyPoints: '关键要点',
+    originalPage: '原始页面',
+    readingTime: '阅读时间',
+    wordCount: '字数统计',
+
     // 设置
     settings: '设置',
     apiKeySettings: 'API Key 设置',
@@ -105,6 +117,18 @@ const messages: Record<string, I18nMessages> = {
     confirmDeleteSession: 'Are you sure you want to delete this conversation?',
     confirmDeleteMessage: 'Are you sure you want to delete this message?',
     deleteSession: 'Delete Session',
+
+    // 页面总结
+    summarizePage: 'Summarize Page',
+    extractingContent: 'Extracting page content...',
+    summarizingContent: 'Generating summary...',
+    summaryComplete: 'Summary complete',
+    summaryError: 'Summary failed',
+    pageSummary: 'Page Summary',
+    keyPoints: 'Key Points',
+    originalPage: 'Original Page',
+    readingTime: 'Reading Time',
+    wordCount: 'Word Count',
 
     // 设置
     settings: 'Settings',

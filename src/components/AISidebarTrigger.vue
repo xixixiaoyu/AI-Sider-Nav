@@ -3,7 +3,7 @@
     <!-- 浮动触发按钮 -->
     <Transition name="trigger-fade">
       <button
-        v-if="showTrigger && aiStore.settings.showTriggerButton"
+        v-if="showTrigger && aiStore.settings.showTriggerButton && !aiStore.sidebarState.isOpen"
         class="ai-sidebar-trigger"
         :class="[
           `ai-sidebar-trigger--${position}`,

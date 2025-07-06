@@ -88,6 +88,85 @@
               </svg>
             </button>
 
+            <!-- 总结页面按钮 -->
+            <button
+              class="ai-sidebar-btn ai-sidebar-btn--icon"
+              :class="{ 'ai-sidebar-btn--loading': isSummarizing }"
+              :title="$t('summarizePage')"
+              :disabled="isSummarizing"
+              @click="handleSummarizePage"
+            >
+              <svg v-if="!isSummarizing" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="14,2 14,8 20,8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="13"
+                  x2="8"
+                  y2="13"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <line
+                  x1="16"
+                  y1="17"
+                  x2="8"
+                  y2="17"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polyline
+                  points="10,9 9,9 8,9"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <div v-else class="ai-sidebar-spinner">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-dasharray="31.416"
+                    stroke-dashoffset="31.416"
+                  >
+                    <animate
+                      attributeName="stroke-dasharray"
+                      dur="2s"
+                      values="0 31.416;15.708 15.708;0 31.416;0 31.416"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="stroke-dashoffset"
+                      dur="2s"
+                      values="0;-15.708;-31.416;-31.416"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                </svg>
+              </div>
+            </button>
+
             <!-- 关闭按钮 -->
             <button
               class="ai-sidebar-btn ai-sidebar-btn--icon ai-sidebar-btn--close"
@@ -157,6 +236,20 @@
   // 处理新对话
   const handleNewChat = () => {
     aiStore.createNewSession()
+  }
+
+  // 总结相关计算属性
+  const isSummarizing = computed(() => {
+    return aiStore.summaryState.isExtracting || aiStore.summaryState.isSummarizing
+  })
+
+  // 处理页面总结
+  const handleSummarizePage = async () => {
+    try {
+      await aiStore.startPageSummary()
+    } catch (error) {
+      console.error('启动页面总结失败:', error)
+    }
   }
 
   // 调整大小相关
