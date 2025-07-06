@@ -54,12 +54,19 @@
     async loadSettings() {
       try {
         if (typeof chrome !== 'undefined' && chrome.storage) {
-          const result = await chrome.storage.sync.get('userSettings')
-          this.settings = result.userSettings || {}
+          const result = await chrome.storage.sync.get('aiSiderNavSettings')
+          const settingsData = result.aiSiderNavSettings || {}
+          // 从统一设置结构中提取用户设置
+          this.settings = settingsData.userSettings || settingsData
         } else {
           // 开发环境使用 localStorage
-          const stored = localStorage.getItem('userSettings')
-          this.settings = stored ? JSON.parse(stored) : {}
+          const stored = localStorage.getItem('aiSiderNavSettings')
+          if (stored) {
+            const data = JSON.parse(stored)
+            this.settings = data.userSettings || data
+          } else {
+            this.settings = {}
+          }
         }
 
         // 检查文本选择复制功能是否启用
@@ -77,9 +84,11 @@
     setupStorageListener() {
       if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.onChanged.addListener((changes, namespace) => {
-          if (namespace === 'sync' && changes.userSettings) {
-            const newSettings = changes.userSettings.newValue
-            if (newSettings) {
+          if (namespace === 'sync' && changes.aiSiderNavSettings) {
+            const newData = changes.aiSiderNavSettings.newValue
+            if (newData) {
+              // 从统一设置结构中提取用户设置
+              const newSettings = newData.userSettings || newData
               this.settings = newSettings
               const newEnabled = newSettings.textSelection?.enabled !== false
 
