@@ -3,13 +3,13 @@
     <div class="header">
       <h1>AI Sider Nav 设置</h1>
     </div>
-    
+
     <div class="content">
       <div v-if="isLoading" class="loading">
         <div class="loading-spinner"></div>
         正在加载设置...
       </div>
-      
+
       <div v-else class="settings-content">
         <!-- 搜索引擎选择 -->
         <div class="setting-section">
@@ -57,6 +57,26 @@
             >
               12小时制
             </button>
+          </div>
+        </div>
+
+        <!-- AI 助手设置 -->
+        <div class="setting-section">
+          <div class="section-title">AI 助手</div>
+
+          <!-- 显示触发按钮 -->
+          <div class="toggle-option">
+            <div class="toggle-info">
+              <span class="toggle-label">显示触发按钮</span>
+              <span class="toggle-desc">在网页右下角显示 AI 助手触发按钮</span>
+            </div>
+            <div
+              class="toggle-switch"
+              :class="{ active: aiSettings.showTriggerButton }"
+              @click="toggleTriggerButton"
+            >
+              <div class="toggle-slider"></div>
+            </div>
           </div>
         </div>
 
@@ -118,9 +138,10 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useSettingsStore } from '@/stores'
+  import { useSettingsStore, useAIAssistantStore } from '@/stores'
 
   const settingsStore = useSettingsStore()
+  const aiAssistantStore = useAIAssistantStore()
 
   // 搜索引擎配置
   const searchEngines = [
@@ -147,6 +168,7 @@
   // 计算属性
   const settings = computed(() => settingsStore.settings)
   const isLoading = computed(() => settingsStore.isLoading)
+  const aiSettings = computed(() => aiAssistantStore.settings)
 
   // 方法
   const selectEngine = async (engineKey: 'google' | 'bing' | 'baidu') => {
@@ -155,6 +177,13 @@
 
   const setTimeFormat = async (format: '12h' | '24h') => {
     await settingsStore.updateSetting('timeFormat', format)
+  }
+
+  // AI 助手相关方法
+  const toggleTriggerButton = async () => {
+    await aiAssistantStore.updateSettings({
+      showTriggerButton: !aiSettings.value.showTriggerButton,
+    })
   }
 
   // 文本选择复制功能相关方法
@@ -229,8 +258,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   .settings-content {

@@ -1081,20 +1081,42 @@
     // 获取 API Key
     async function getApiKey() {
       try {
+        console.log('开始获取 API Key...')
+
         // 优先从 chrome.storage 获取（支持跨域访问）
         if (typeof chrome !== 'undefined' && chrome.storage) {
           try {
-            const result = await chrome.storage.sync.get('deepseek_api_key')
-            if (result.deepseek_api_key) {
-              return result.deepseek_api_key
+            console.log('尝试从 chrome.storage.sync 获取 API Key...')
+
+            // 首先尝试从新的统一设置结构中获取
+            const settingsResult = await chrome.storage.sync.get('aiSiderNavSettings')
+            console.log('aiSiderNavSettings 结果:', settingsResult)
+            if (settingsResult.aiSiderNavSettings?.aiAssistant?.apiKey) {
+              console.log('从 aiSiderNavSettings.aiAssistant.apiKey 成功获取 API Key')
+              return settingsResult.aiSiderNavSettings.aiAssistant.apiKey
             }
+
+            // 然后尝试从旧的独立键获取
+            const keyResult = await chrome.storage.sync.get('deepseek_api_key')
+            console.log('deepseek_api_key 结果:', keyResult)
+            if (keyResult.deepseek_api_key) {
+              console.log('从 deepseek_api_key 成功获取 API Key')
+              return keyResult.deepseek_api_key
+            }
+
+            console.log('chrome.storage.sync 中没有找到 API Key')
           } catch (chromeError) {
             console.warn('从 chrome.storage 获取 API Key 失败，回退到 localStorage:', chromeError)
           }
+        } else {
+          console.log('chrome.storage 不可用')
         }
 
         // 回退到 localStorage
-        return localStorage.getItem('deepseek_api_key')
+        console.log('尝试从 localStorage 获取 API Key...')
+        const localApiKey = localStorage.getItem('deepseek_api_key')
+        console.log('localStorage 结果:', localApiKey ? '找到 API Key' : '未找到 API Key')
+        return localApiKey
       } catch (error) {
         console.error('获取 API Key 失败:', error)
         return null
@@ -1126,8 +1148,11 @@
 
     // 流式渲染 AI 回复
     async function streamAIResponse(messages, onChunk) {
+      console.log('streamAIResponse: 开始获取 API Key...')
       const apiKey = await getApiKey()
+      console.log('streamAIResponse: API Key 获取结果:', apiKey ? '成功' : '失败')
       if (!apiKey) {
+        console.error('streamAIResponse: API Key 为空，抛出错误')
         throw new Error('请先在设置中配置 DeepSeek API Key')
       }
 
