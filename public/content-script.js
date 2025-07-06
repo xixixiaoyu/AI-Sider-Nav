@@ -486,8 +486,8 @@
       position: 'fixed',
       bottom: '20px',
       right: '20px',
-      width: '48px',
-      height: '48px',
+      width: '36px',
+      height: '36px',
       borderRadius: '24px',
       background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
       color: 'white',
@@ -899,7 +899,8 @@
       script.id = 'marked-script'
       // 使用 cdnjs 并锁定版本
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js'
-      script.integrity = 'sha512-zAs8dHhwlTbfcVGRXJsS4bNeTnHJ22dOks9b3A2e+YoPUnTI0UWcWupKtdmKiz3VltL93qpvYc2nS/6noM/U7w=='
+      script.integrity =
+        'sha512-zAs8dHhwlTbfcVGRXJsS4bNeTnHJ22dOks9b3A2e+YoPUnTI0UWcWupKtdmKiz3VltL93qpvYc2nS/6noM/U7w=='
       script.crossOrigin = 'anonymous'
       script.referrerPolicy = 'no-referrer'
       script.onload = () => resolve()
