@@ -456,7 +456,7 @@
     const button = document.createElement('div')
     button.id = 'ai-sider-nav-trigger'
     button.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path
           d="M12 2L2 7L12 12L22 7L12 2Z"
           stroke="currentColor"
@@ -486,14 +486,14 @@
       position: 'fixed',
       bottom: '20px',
       right: '20px',
-      width: '36px',
-      height: '36px',
-      borderRadius: '18px',
+      width: '48px',
+      height: '48px',
+      borderRadius: '24px',
       background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
       color: 'white',
       border: 'none',
       cursor: 'pointer',
-      boxShadow: '0 2px 6px rgba(20, 184, 166, 0.15)',
+      boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)',
       zIndex: '999999',
       display: 'flex',
       alignItems: 'center',
@@ -506,12 +506,12 @@
     // 悬停效果
     button.addEventListener('mouseenter', () => {
       button.style.transform = 'scale(1.1)'
-      button.style.boxShadow = '0 3px 10px rgba(20, 184, 166, 0.25)'
+      button.style.boxShadow = '0 6px 20px rgba(20, 184, 166, 0.4)'
     })
 
     button.addEventListener('mouseleave', () => {
       button.style.transform = 'scale(1)'
-      button.style.boxShadow = '0 2px 6px rgba(20, 184, 166, 0.15)'
+      button.style.boxShadow = '0 4px 12px rgba(20, 184, 166, 0.3)'
     })
 
     // 点击事件
@@ -643,7 +643,41 @@
           </button>
         </div>
       </div>
-      
+
+      <!-- 总结功能区域（仅非新标签页显示） -->
+      <div id="ai-summary-section" style="
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f8fafc;
+        display: ${isNewTabPage ? 'none' : 'block'};
+      ">
+        <button id="ai-summarize-btn" style="
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #14b8a6;
+          border-radius: 6px;
+          background: white;
+          color: #14b8a6;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          总结当前页面
+        </button>
+      </div>
+
       <!-- 消息列表区域 -->
       <div id="ai-messages-container" style="
         flex: 1;
@@ -727,7 +761,9 @@
           <button
             id="ai-send-btn"
             style="
-              padding: 10px;
+              width: 40px;
+              height: 40px;
+              padding: 0;
               border: none;
               border-radius: 8px;
               background: linear-gradient(135deg, #14b8a6, #0d9488);
@@ -737,6 +773,7 @@
               display: flex;
               align-items: center;
               justify-content: center;
+              flex-shrink: 0;
             "
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -785,11 +822,15 @@
       sidebar.style.right = '0'
       if (button) {
         button.style.background = 'linear-gradient(135deg, #0d9488, #0f766e)'
+        // 隐藏触发按钮
+        button.style.display = 'none'
       }
     } else {
       sidebar.style.right = `-${aiAssistantState.width}px`
       if (button) {
         button.style.background = 'linear-gradient(135deg, #14b8a6, #0d9488)'
+        // 显示触发按钮
+        button.style.display = 'flex'
       }
     }
   }
@@ -839,8 +880,41 @@
     }
   }
 
+  // 加载 marked.js 用于 Markdown 渲染
+  function loadMarkedScript() {
+    return new Promise((resolve, reject) => {
+      // 如果已经加载，则直接返回
+      if (typeof window.marked === 'function') {
+        return resolve()
+      }
+      const existingScript = document.getElementById('marked-script')
+      if (existingScript) {
+        // 如果脚本已存在但 marked 对象还不可用，等待加载完成
+        existingScript.addEventListener('load', () => resolve())
+        existingScript.addEventListener('error', (e) => reject(e))
+        return
+      }
+
+      const script = document.createElement('script')
+      script.id = 'marked-script'
+      // 使用 cdnjs 并锁定版本
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js'
+      script.integrity = 'sha512-zAs8dHhwlTbfcVGRXJsS4bNeTnHJ22dOks9b3A2e+YoPUnTI0UWcWupKtdmKiz3VltL93qpvYc2nS/6noM/U7w=='
+      script.crossOrigin = 'anonymous'
+      script.referrerPolicy = 'no-referrer'
+      script.onload = () => resolve()
+      script.onerror = (e) => reject(e)
+      document.head.appendChild(script)
+    })
+  }
+
   // 初始化
   async function init() {
+    try {
+      await loadMarkedScript()
+    } catch (error) {
+      console.error('AI Sider Nav: Markdown 渲染器加载失败。', error)
+    }
     await loadSettings()
     await loadSidebarWidth()
 
@@ -869,6 +943,9 @@
         gap: 12px;
         ${isUser ? 'flex-direction: row-reverse;' : ''}
       `
+      if (!isUser) {
+        messageDiv.classList.add('ai-message')
+      }
 
       const avatar = document.createElement('div')
       avatar.style.cssText = `
@@ -903,12 +980,16 @@
             : 'background: #f3f4f6; color: #1f2937; margin-right: 40px;'
         }
       `
-
-      // 如果是 AI 消息，渲染 Markdown；如果是用户消息，使用纯文本
+      // For user messages, use textContent to prevent XSS.
+      // For AI messages, we will use innerHTML to render Markdown.
       if (isUser) {
         messageContent.textContent = content
       } else {
-        messageContent.innerHTML = formatMarkdown(content)
+        if (typeof window.marked === 'function') {
+          messageContent.innerHTML = window.marked(content)
+        } else {
+          messageContent.textContent = content // Fallback
+        }
       }
 
       messageDiv.appendChild(avatar)
@@ -924,93 +1005,6 @@
       messagesContainer.scrollTop = messagesContainer.scrollHeight
 
       return messageDiv
-    }
-
-    // 简单的 Markdown 格式化函数
-    function formatMarkdown(text) {
-      // 先处理代码块，避免其中的内容被误处理
-      const codeBlocks = []
-      let codeBlockIndex = 0
-
-      // 提取代码块
-      text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-        const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`
-        codeBlocks[codeBlockIndex] = {
-          lang: lang || '',
-          code: code.trim(),
-          isSpecial: lang === 'mermaid',
-        }
-        codeBlockIndex++
-        return placeholder
-      })
-
-      // 处理其他 Markdown 格式
-      text = text
-        // 转义 HTML 特殊字符（但保留代码块占位符）
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        // 处理标题
-        .replace(
-          /^### (.*$)/gm,
-          '<h3 style="margin: 16px 0 8px 0; font-size: 16px; font-weight: 600; color: #1f2937;">$1</h3>'
-        )
-        .replace(
-          /^## (.*$)/gm,
-          '<h2 style="margin: 20px 0 12px 0; font-size: 18px; font-weight: 600; color: #1f2937;">$1</h2>'
-        )
-        .replace(
-          /^# (.*$)/gm,
-          '<h1 style="margin: 24px 0 16px 0; font-size: 20px; font-weight: 600; color: #1f2937;">$1</h1>'
-        )
-        // 处理粗体
-        .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 600;">$1</strong>')
-        // 处理斜体
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        // 处理行内代码
-        .replace(
-          /`([^`]+)`/g,
-          '<code style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 13px;">$1</code>'
-        )
-        // 处理列表项
-        .replace(/^- (.*$)/gm, '<li style="margin: 4px 0;">$1</li>')
-        .replace(/^(\d+)\. (.*$)/gm, '<li style="margin: 4px 0; list-style-type: decimal;">$2</li>')
-        // 处理换行
-        .replace(/\n\n/g, '</p><p style="margin: 8px 0;">')
-        .replace(/\n/g, '<br>')
-
-      // 恢复代码块
-      text = text.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
-        const block = codeBlocks[index]
-        if (block.isSpecial && block.lang === 'mermaid') {
-          return `<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 12px 0; border-left: 4px solid #79b4a6;">
-            <div style="font-weight: 600; color: #79b4a6; margin-bottom: 8px;">📊 Mermaid 图表</div>
-            <pre style="background: #fff; padding: 12px; border-radius: 4px; overflow-x: auto; font-family: monospace; font-size: 12px; line-height: 1.4;"><code>${block.code}</code></pre>
-            <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">💡 此图表可在支持 Mermaid 的编辑器中渲染</div>
-          </div>`
-        } else {
-          return `<pre style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin: 8px 0; overflow-x: auto; border-left: 3px solid #79b4a6;"><code>${block.code}</code></pre>`
-        }
-      })
-
-      // 处理列表包装
-      text = text.replace(
-        /(<li[^>]*>.*?<\/li>)/gs,
-        '<ul style="margin: 8px 0; padding-left: 20px;">$1</ul>'
-      )
-
-      // 包装段落
-      if (
-        !text.includes('<h1>') &&
-        !text.includes('<h2>') &&
-        !text.includes('<h3>') &&
-        !text.includes('<ul>') &&
-        !text.includes('<pre>')
-      ) {
-        text = `<p style="margin: 8px 0;">${text}</p>`
-      }
-
-      return text
     }
 
     // 显示加载状态
@@ -1238,7 +1232,11 @@
         // 流式渲染回复
         await streamAIResponse(conversationHistory, (chunk) => {
           fullResponse += chunk
-          aiMessageContent.textContent = fullResponse
+          if (typeof window.marked === 'function') {
+            aiMessageContent.innerHTML = window.marked(fullResponse)
+          } else {
+            aiMessageContent.textContent = fullResponse
+          }
           // 自动滚动到底部
           messagesContainer.scrollTop = messagesContainer.scrollHeight
         })
@@ -1291,6 +1289,111 @@
     // 发送按钮事件
     sendBtn.addEventListener('click', sendMessage)
 
+    // 总结按钮事件
+    const summarizeBtn = sidebar.querySelector('#ai-summarize-btn')
+    if (summarizeBtn) {
+      summarizeBtn.addEventListener('click', summarizePage)
+    }
+
+    // 总结页面功能
+    async function summarizePage() {
+      if (isResponding) return
+
+      // 设置按钮状态
+      summarizeBtn.disabled = true
+      summarizeBtn.style.opacity = '0.5'
+      summarizeBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        正在分析页面...
+      `
+
+      try {
+        // 提取页面内容
+        const pageContent = extractPageContent()
+        if (!pageContent) {
+          throw new Error('无法提取页面内容')
+        }
+
+        // 构建总结提示
+        const summaryPrompt = `请帮我总结以下网页内容，包括主要观点、关键信息和结构概述：
+
+**页面标题：** ${pageContent.title}
+**页面URL：** ${pageContent.url}
+**字数统计：** ${pageContent.metadata.wordCount} 字
+**预计阅读时间：** ${pageContent.metadata.readingTime} 分钟
+
+**主要内容：**
+${pageContent.mainContent.substring(0, 3000)}${pageContent.mainContent.length > 3000 ? '...' : ''}
+
+${
+  pageContent.structure.headings.length > 0
+    ? `**页面结构：**
+${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.text}`).join('\n')}`
+    : ''
+}
+
+请用中文提供一个简洁而全面的总结，包括：
+1. 页面主题和核心内容
+2. 主要观点或信息要点
+3. 内容结构概述
+4. 如果有的话，提及重要的数据、图表或列表信息`
+
+        // 添加总结消息到对话
+        addMessage('📄 正在总结当前页面内容...', false)
+        conversationHistory.push({ role: 'user', content: summaryPrompt })
+
+        // 设置响应状态
+        isResponding = true
+        sendBtn.disabled = true
+        sendBtn.style.opacity = '0.5'
+
+        // 创建 AI 消息容器
+        const aiMessageDiv = addMessage('', false)
+        const aiMessageContent = aiMessageDiv.querySelector('div:last-child')
+        let fullResponse = ''
+
+        // 流式渲染回复
+        await streamAIResponse(conversationHistory, (chunk) => {
+          fullResponse += chunk
+          if (typeof window.marked === 'function') {
+            aiMessageContent.innerHTML = window.marked(fullResponse)
+          } else {
+            aiMessageContent.textContent = fullResponse
+          }
+          // 自动滚动到底部
+          messagesContainer.scrollTop = messagesContainer.scrollHeight
+        })
+
+        // 更新对话历史
+        conversationHistory.push({ role: 'assistant', content: fullResponse })
+      } catch (error) {
+        console.error('页面总结失败:', error)
+        addMessage(`❌ 页面总结失败：${error.message}`, false)
+      } finally {
+        // 重置按钮状态
+        summarizeBtn.disabled = false
+        summarizeBtn.style.opacity = '1'
+        summarizeBtn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          总结当前页面
+        `
+
+        // 重置响应状态
+        isResponding = false
+        sendBtn.disabled = false
+        sendBtn.style.opacity = '1'
+      }
+    }
+
     // 添加 CSS 动画
     if (!document.querySelector('#ai-chat-styles')) {
       const style = document.createElement('style')
@@ -1317,6 +1420,86 @@
         
         #ai-sidebar-close:hover {
           background: #f3f4f6 !important;
+        }
+
+        #ai-summarize-btn:hover {
+          background: #14b8a6 !important;
+          color: white !important;
+        }
+
+        #ai-summarize-btn:disabled {
+          cursor: not-allowed !important;
+          opacity: 0.5 !important;
+        }
+
+        /* Markdown 渲染样式 */
+        .ai-message p {
+          margin-top: 0;
+          margin-bottom: 1em;
+        }
+        .ai-message h1, .ai-message h2, .ai-message h3, .ai-message h4, .ai-message h5, .ai-message h6 {
+          margin-top: 1.2em;
+          margin-bottom: 0.6em;
+          font-weight: 600;
+        }
+        .ai-message h1 { font-size: 1.5em; }
+        .ai-message h2 { font-size: 1.3em; }
+        .ai-message h3 { font-size: 1.2em; }
+        .ai-message ul, .ai-message ol {
+          padding-left: 1.5em;
+          margin-bottom: 1em;
+        }
+        .ai-message li {
+          margin-bottom: 0.4em;
+        }
+        .ai-message blockquote {
+          margin: 1em 0;
+          padding: 0.5em 1em;
+          border-left: 4px solid #10b981;
+          background-color: #f0fdfa;
+          color: #1f2937;
+        }
+        .ai-message pre {
+          background-color: #1f2937; /* 深色代码块背景 */
+          color: #f3f4f6; /* 亮色代码文本 */
+          padding: 1em;
+          border-radius: 8px;
+          overflow-x: auto;
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 0.9em;
+          margin-bottom: 1em;
+        }
+        .ai-message code {
+          font-family: 'Courier New', Courier, monospace;
+          background-color: #e5e7eb;
+          color: #ef4444;
+          padding: 0.2em 0.4em;
+          border-radius: 4px;
+          font-size: 0.9em;
+        }
+        .ai-message pre code {
+          background-color: transparent;
+          color: inherit;
+          padding: 0;
+          border-radius: 0;
+        }
+        .ai-message table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 1em;
+          border: 1px solid #e5e7eb;
+        }
+        .ai-message th, .ai-message td {
+          border: 1px solid #e5e7eb;
+          padding: 0.6em 0.8em;
+          text-align: left;
+        }
+        .ai-message th {
+          background-color: #f9fafb;
+          font-weight: 600;
+        }
+        .ai-message tr:nth-child(even) {
+          background-color: #f9fafb;
         }
       `
       document.head.appendChild(style)
