@@ -13,6 +13,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import { useSettingsStore } from '@/stores/settings'
+  import { resourceManager } from '@/utils/resourceManager'
 
   const settingsStore = useSettingsStore()
   const settings = computed(() => settingsStore.settings)
@@ -95,8 +96,8 @@
 
       // 显示成功提示
       showToast.value = true
-      if (toastTimer) clearTimeout(toastTimer)
-      toastTimer = window.setTimeout(() => {
+      if (toastTimer) resourceManager.clearTimer(toastTimer)
+      toastTimer = resourceManager.setTimeout(() => {
         showToast.value = false
       }, 2000)
 
@@ -125,17 +126,15 @@
     console.log('SimpleTextCopy: Settings loaded:', settings.value.textSelection)
     console.log('SimpleTextCopy: Feature enabled:', isEnabled.value)
 
-    document.addEventListener('selectionchange', handleSelection)
-    document.addEventListener('mouseup', handleSelection)
-    document.addEventListener('click', handleClickOutside)
+    resourceManager.addEventListener(document, 'selectionchange', handleSelection)
+    resourceManager.addEventListener(document, 'mouseup', handleSelection)
+    resourceManager.addEventListener(document, 'click', handleClickOutside)
   })
 
   onUnmounted(() => {
     console.log('SimpleTextCopy: Component unmounted')
-    document.removeEventListener('selectionchange', handleSelection)
-    document.removeEventListener('mouseup', handleSelection)
-    document.removeEventListener('click', handleClickOutside)
-    if (toastTimer) clearTimeout(toastTimer)
+    // 资源管理器会自动清理所有资源，无需手动移除
+    if (toastTimer) resourceManager.clearTimer(toastTimer)
   })
 </script>
 

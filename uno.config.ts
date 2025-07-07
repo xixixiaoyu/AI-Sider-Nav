@@ -48,9 +48,11 @@ export default defineConfig({
   },
   shortcuts: {
     // 常用组合样式
-    'btn-primary': 'bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors',
-    'card': 'bg-white rounded-lg shadow-md p-4',
-    'input-field': 'border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500',
+    'btn-primary':
+      'bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors',
+    card: 'bg-white rounded-lg shadow-md p-4',
+    'input-field':
+      'border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500',
   },
   rules: [
     // 自定义规则

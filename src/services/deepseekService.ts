@@ -80,13 +80,55 @@ function handleError(error: unknown, context: string, source: string) {
 
 const API_URL = 'https://api.deepseek.com/chat/completions'
 
-let abortController: AbortController | null = null
+// 请求管理器
+class RequestManager {
+  private activeRequests = new Map<string, AbortController>()
+  private requestQueue: Array<{ id: string; request: () => Promise<any> }> = []
+  private maxConcurrentRequests = 3
+  private activeRequestCount = 0
+
+  // 创建新的请求控制器
+  createRequest(id: string): AbortController {
+    // 取消同类型的旧请求
+    this.abortRequest(id)
+
+    const controller = new AbortController()
+    this.activeRequests.set(id, controller)
+    return controller
+  }
+
+  // 取消特定请求
+  abortRequest(id: string) {
+    const controller = this.activeRequests.get(id)
+    if (controller) {
+      controller.abort()
+      this.activeRequests.delete(id)
+    }
+  }
+
+  // 取消所有请求
+  abortAllRequests() {
+    this.activeRequests.forEach((controller) => {
+      controller.abort()
+    })
+    this.activeRequests.clear()
+  }
+
+  // 清理完成的请求
+  cleanupRequest(id: string) {
+    this.activeRequests.delete(id)
+  }
+
+  // 获取活跃请求数量
+  getActiveRequestCount(): number {
+    return this.activeRequests.size
+  }
+}
+
+const requestManager = new RequestManager()
 
 export function abortCurrentRequest() {
-  if (abortController) {
-    abortController.abort()
-    abortController = null
-  }
+  requestManager.abortAllRequests()
 }
 
 const getHeaders = async () => {
@@ -110,7 +152,8 @@ export async function getAIStreamResponse(
   let isReading = true
 
   try {
-    abortController = new AbortController()
+    const requestId = `stream-${Date.now()}`
+    const abortController = requestManager.createRequest(requestId)
     const signal = abortController.signal
 
     // 构建包含所有系统提示词的消息列表
@@ -165,6 +208,7 @@ export async function getAIStreamResponse(
           if (jsonData === '[DONE]') {
             isReading = false
             onChunk('[DONE]')
+            requestManager.cleanupRequest(requestId)
             return
           }
           try {
@@ -194,7 +238,7 @@ export async function getAIStreamResponse(
       throw error
     }
   } finally {
-    abortController = null
+    requestManager.cleanupRequest(requestId)
   }
 }
 

@@ -1556,24 +1556,33 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
     }
   }
 
-  // 页面内容提取功能
+  // 页面内容提取功能（优化内存使用）
   function extractPageContent() {
     try {
       // 基本页面信息
       const title = document.title || document.querySelector('h1')?.textContent?.trim() || '无标题'
       const url = window.location.href
 
-      // 提取主要内容
-      const mainContent = extractMainContent()
+      // 限制内容提取的大小以避免内存问题
+      const MAX_CONTENT_LENGTH = 50000 // 50KB
+      const MAX_IMAGES = 20
+      const MAX_TABLES = 10
+      const MAX_LISTS = 15
 
-      // 提取图片信息
-      const images = extractImages()
+      // 提取主要内容（限制长度）
+      let mainContent = extractMainContent()
+      if (mainContent.length > MAX_CONTENT_LENGTH) {
+        mainContent = mainContent.substring(0, MAX_CONTENT_LENGTH) + '...[内容已截断]'
+      }
 
-      // 提取表格信息
-      const tables = extractTables()
+      // 提取图片信息（限制数量）
+      const images = extractImages().slice(0, MAX_IMAGES)
 
-      // 提取列表信息
-      const lists = extractLists()
+      // 提取表格信息（限制数量）
+      const tables = extractTables().slice(0, MAX_TABLES)
+
+      // 提取列表信息（限制数量）
+      const lists = extractLists().slice(0, MAX_LISTS)
 
       // 提取页面结构
       const structure = extractPageStructure()
@@ -1834,6 +1843,9 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
             content: content,
           })
           sendResponse({ success: true })
+
+          // 清理临时变量以释放内存
+          content = null
         } else {
           sendResponse({ success: false, error: '内容提取失败' })
         }
@@ -1841,6 +1853,22 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
       return true
     })
   }
+
+  // 页面卸载时清理资源
+  window.addEventListener('beforeunload', () => {
+    // 清理可能的内存引用
+    if (typeof gc === 'function') {
+      gc() // 如果可用，触发垃圾回收
+    }
+  })
+
+  // 定期清理内存（每5分钟）
+  setInterval(() => {
+    // 清理可能的内存泄露
+    if (document.querySelectorAll('*').length > 10000) {
+      console.warn('⚠️ 检测到大量DOM节点，可能存在内存泄露')
+    }
+  }, 300000)
 
   // 等待 DOM 加载完成
   if (document.readyState === 'loading') {

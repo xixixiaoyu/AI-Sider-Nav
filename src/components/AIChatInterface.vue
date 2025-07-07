@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted } from 'vue'
+  import { computed } from 'vue'
   import { useAIAssistantStore } from '@/stores'
   import { getAIStreamResponse, abortCurrentRequest } from '@/services/deepseekService'
   import { i18n } from '@/i18n'

@@ -40,7 +40,7 @@ class Logger {
     if (this.enableConsole) {
       const prefix = source ? `[${source}]` : ''
       const logMessage = `${prefix} ${message}`
-      
+
       switch (level) {
         case 'debug':
           console.debug(logMessage, data)
@@ -76,7 +76,7 @@ class Logger {
 
   getLogs(level?: LogLevel): LogEntry[] {
     if (level) {
-      return this.logs.filter(log => log.level === level)
+      return this.logs.filter((log) => log.level === level)
     }
     return [...this.logs]
   }

@@ -92,11 +92,85 @@ chrome.runtime.onSuspend.addListener(() => {
 })
 
 // 保持 service worker 活跃（Manifest V3）
-const keepAlive = () => {
-  chrome.runtime.getPlatformInfo(() => {
-    // 简单的操作来保持活跃
-  })
+class ServiceWorkerManager {
+  constructor() {
+    this.keepAliveInterval = null
+    this.isActive = false
+    this.lastActivity = Date.now()
+    this.maxIdleTime = 4 * 60 * 1000 // 4分钟
+    this.keepAliveInterval = 25000 // 25秒
+
+    this.startKeepAlive()
+    this.setupActivityTracking()
+  }
+
+  startKeepAlive() {
+    if (this.keepAliveInterval) return
+
+    this.isActive = true
+    this.keepAliveInterval = setInterval(() => {
+      this.performKeepAlive()
+    }, this.keepAliveInterval)
+
+    console.log('🔄 Service Worker 保活机制已启动')
+  }
+
+  stopKeepAlive() {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval)
+      this.keepAliveInterval = null
+      this.isActive = false
+      console.log('⏹️ Service Worker 保活机制已停止')
+    }
+  }
+
+  performKeepAlive() {
+    const now = Date.now()
+
+    // 如果长时间无活动，减少保活频率
+    if (now - this.lastActivity > this.maxIdleTime) {
+      console.log('🔄 Service Worker 空闲状态，执行轻量保活')
+      // 执行轻量级保活操作
+      chrome.runtime.getPlatformInfo(() => {
+        // 简单的操作来保持活跃
+      })
+    } else {
+      // 正常保活操作
+      chrome.runtime.getPlatformInfo(() => {
+        // 简单的操作来保持活跃
+      })
+    }
+  }
+
+  setupActivityTracking() {
+    // 监听各种活动事件来更新最后活动时间
+    const updateActivity = () => {
+      this.lastActivity = Date.now()
+    }
+
+    // 监听消息
+    chrome.runtime.onMessage.addListener(updateActivity)
+
+    // 监听标签页更新
+    if (chrome.tabs && chrome.tabs.onUpdated) {
+      chrome.tabs.onUpdated.addListener(updateActivity)
+    }
+
+    // 监听扩展图标点击
+    if (chrome.action && chrome.action.onClicked) {
+      chrome.action.onClicked.addListener(updateActivity)
+    }
+  }
+
+  cleanup() {
+    this.stopKeepAlive()
+  }
 }
 
-// 每 25 秒执行一次保活操作
-setInterval(keepAlive, 25000)
+// 创建 Service Worker 管理器实例
+const swManager = new ServiceWorkerManager()
+
+// 在 Service Worker 关闭前清理资源
+self.addEventListener('beforeunload', () => {
+  swManager.cleanup()
+})

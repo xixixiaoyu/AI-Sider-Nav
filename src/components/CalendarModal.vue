@@ -181,7 +181,7 @@
 
     // 获取当月第一天和最后一天
     const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
+    // const lastDay = new Date(year, month + 1, 0) // 暂时未使用
 
     // 获取第一周的开始日期
     const weekStartsOnMonday = settingsStore.settings.calendar.weekStartsOn === 'monday'
@@ -551,16 +551,16 @@
     }
 
     .close-button {
-       top: 0.5rem;
-       right: 0.5rem;
-       width: 24px;
-       height: 24px;
-     }
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 24px;
+      height: 24px;
+    }
 
-     .close-button svg {
-       width: 14px;
-       height: 14px;
-     }
+    .close-button svg {
+      width: 14px;
+      height: 14px;
+    }
 
     .month-name {
       font-size: 1.125rem;

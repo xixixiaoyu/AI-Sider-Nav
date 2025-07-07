@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, watch, nextTick } from 'vue'
+  import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
   import mermaid from 'mermaid'
 
   interface Props {
@@ -69,6 +69,22 @@
     })
   }
 
+  // 清理之前的图表
+  const cleanupDiagram = () => {
+    if (diagramRef.value) {
+      // 移除所有事件监听器
+      const svgElement = diagramRef.value.querySelector('svg')
+      if (svgElement) {
+        // 克隆节点以移除所有事件监听器
+        const newSvg = svgElement.cloneNode(true)
+        svgElement.parentNode?.replaceChild(newSvg, svgElement)
+      }
+
+      // 清空容器
+      diagramRef.value.innerHTML = ''
+    }
+  }
+
   // 渲染图表
   const renderDiagram = async () => {
     if (!props.diagram || !diagramRef.value) return
@@ -77,8 +93,8 @@
     error.value = null
 
     try {
-      // 清空容器
-      diagramRef.value.innerHTML = ''
+      // 清理之前的图表
+      cleanupDiagram()
 
       // 生成唯一 ID
       const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -101,7 +117,7 @@
         svgElement.style.width = props.width
         svgElement.style.height = props.height
         svgElement.style.maxWidth = '100%'
-        
+
         // 添加响应式支持
         if (props.width === '100%') {
           svgElement.removeAttribute('width')
@@ -144,6 +160,11 @@
     nextTick(() => {
       renderDiagram()
     })
+  })
+
+  // 组件卸载时清理
+  onUnmounted(() => {
+    cleanupDiagram()
   })
 </script>
 

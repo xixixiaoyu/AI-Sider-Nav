@@ -19,6 +19,7 @@
   import { onMounted, onUnmounted, computed, ref } from 'vue'
   import { useAppStore, useSettingsStore } from '@/stores'
   import CalendarModal from './CalendarModal.vue'
+  import { resourceManager } from '@/utils/resourceManager'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
@@ -57,15 +58,15 @@
     // 立即更新一次时间
     appStore.updateTime()
 
-    // 每秒更新时间
-    timeInterval = window.setInterval(() => {
+    // 使用资源管理器创建定时器
+    timeInterval = resourceManager.setInterval(() => {
       appStore.updateTime()
     }, 1000)
   })
 
   onUnmounted(() => {
     if (timeInterval) {
-      clearInterval(timeInterval)
+      resourceManager.clearTimer(timeInterval)
     }
   })
 </script>

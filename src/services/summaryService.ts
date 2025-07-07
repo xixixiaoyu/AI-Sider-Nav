@@ -3,7 +3,8 @@
  * 使用 AI 对提取的网页内容进行智能总结
  */
 
-import { ExtractedContent, ImageInfo, TableInfo, ListInfo } from './contentExtractor'
+import { ExtractedContent } from './contentExtractor'
+// import { ImageInfo, TableInfo, ListInfo } from './contentExtractor' // 暂时未使用
 import { getAIStreamResponse } from './deepseekService'
 import { Message } from '../types'
 
@@ -125,9 +126,7 @@ ${content.mainContent}
     // 添加结构信息
     if (content.structure.headings.length > 0) {
       prompt += `**页面结构：**
-${content.structure.headings
-  .map((h) => `${'  '.repeat(h.level - 1)}- ${h.text}`)
-  .join('\n')}
+${content.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.text}`).join('\n')}
 
 `
     }
@@ -243,10 +242,10 @@ ${content.images.length > 5 ? `\n...（共 ${content.images.length} 张图片）
     summaryTime: number
   ): SummaryResult {
     // 简单的文本解析逻辑
-    const lines = response.split('\n').filter((line) => line.trim())
+    // const lines = response.split('\n') // 暂时未使用.filter((line) => line.trim())
 
     let title = originalContent.title
-    let summary = response
+    const summary = response
     const keyPoints: string[] = []
     let mermaidDiagram: string | undefined
 
@@ -257,7 +256,9 @@ ${content.images.length > 5 ? `\n...（共 ${content.images.length} 张图片）
     }
 
     // 尝试提取关键要点
-    const keyPointsSection = response.match(/(?:关键要点|要点|Key Points)[:：]\s*([\s\S]*?)(?:\n\n|\n(?:[A-Z]|[一二三四五六七八九十]))/i)
+    const keyPointsSection = response.match(
+      /(?:关键要点|要点|Key Points)[:：]\s*([\s\S]*?)(?:\n\n|\n(?:[A-Z]|[一二三四五六七八九十]))/i
+    )
     if (keyPointsSection) {
       const pointsText = keyPointsSection[1]
       const points = pointsText

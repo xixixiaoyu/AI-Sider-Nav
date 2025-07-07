@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, nextTick } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { useAppStore, useSettingsStore } from '@/stores'
 
   const appStore = useAppStore()
@@ -38,7 +38,7 @@
   const searchInputRef = ref<HTMLInputElement>()
 
   // 计算属性
-  const isInputFocused = computed(() => appStore.isSearchFocused)
+  // const isInputFocused = computed(() => appStore.isSearchFocused) // 暂时未使用
   const currentSearchEngine = computed(() => settingsStore.currentSearchEngine)
 
   const handleSearch = () => {

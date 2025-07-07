@@ -166,7 +166,7 @@
         document.body.appendChild(textArea)
         textArea.focus()
         textArea.select()
-        // eslint-disable-next-line deprecation/deprecation
+        // eslint-disable-next-line
         document.execCommand('copy')
         document.body.removeChild(textArea)
       }

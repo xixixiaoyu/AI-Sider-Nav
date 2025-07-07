@@ -52,9 +52,9 @@
     showThinking?: boolean
   }
 
-  interface Emits {
-    (e: 'messageAction', action: string, messageId: string): void
-  }
+  // interface Emits {
+  //   (e: 'messageAction', action: string, messageId: string): void
+  // } // 暂时未使用
 
   const props = withDefaults(defineProps<Props>(), {
     isLoading: false,
@@ -63,7 +63,7 @@
     showThinking: true,
   })
 
-  const emit = defineEmits<Emits>()
+  // const emit = defineEmits<Emits>() // 暂时未使用
 
   const messageListRef = ref<HTMLElement>()
 
@@ -132,7 +132,7 @@
   )
 
   // 处理滚动事件
-  let isUserScrolling = false
+  // let isUserScrolling = false // 暂时未使用
   let scrollTimeout: number | null = null
 
   const handleScroll = () => {

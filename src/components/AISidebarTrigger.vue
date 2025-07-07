@@ -135,17 +135,17 @@
     aiStore.toggleSidebar()
   }
 
-  const handleMouseEnter = () => {
-    isHovered.value = true
-    if (!aiStore.sidebarState.isOpen) {
-      showTooltip.value = true
-    }
-  }
+  // const handleMouseEnter = () => {
+  //   isHovered.value = true
+  //   if (!aiStore.sidebarState.isOpen) {
+  //     showTooltip.value = true
+  //   }
+  // }
 
-  const handleMouseLeave = () => {
-    isHovered.value = false
-    showTooltip.value = false
-  }
+  // const handleMouseLeave = () => {
+  //   isHovered.value = false
+  //   showTooltip.value = false
+  // }
 
   // 自动隐藏逻辑
   let hideTimer: number | null = null

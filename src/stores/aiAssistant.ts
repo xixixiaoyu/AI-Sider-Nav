@@ -10,6 +10,7 @@ import {
 } from '../types'
 import { generateChatTitle } from '../services/aiAnalysisService'
 import { SummaryResult } from '../services/summaryService'
+import { performanceConfig } from '../utils/performanceConfig'
 
 export const useAIAssistantStore = defineStore('aiAssistant', () => {
   // 侧边栏状态
@@ -61,6 +62,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
   const chatSessions = ref<ChatSession[]>([])
   const currentSessionId = ref<string | null>(null)
 
+  // 会话管理配置（从性能配置中获取）
+  const getSessionLimits = () => performanceConfig.get('sessions')
+
   // AI 响应状态
   const responseState = ref<AIResponseState>({
     isLoading: false,
@@ -77,6 +81,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     currentSummary: null as SummaryResult | null,
     error: null as string | null,
   })
+
+  // 消息监听器清理函数
+  let messageListenerCleanup: (() => void) | null = null
 
   // 计算属性
   const currentSession = computed(() => {
@@ -212,6 +219,35 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     currentSessionId.value = null
   }
 
+  // 清理旧消息（保留最近的消息）
+  const cleanupSessionMessages = (sessionId: string) => {
+    const session = chatSessions.value.find((s) => s.id === sessionId)
+    if (!session) return
+
+    const limits = getSessionLimits()
+    if (session.messages.length > limits.messageCleanupThreshold) {
+      // 保留最近的消息，删除旧消息
+      const keepCount = limits.maxMessagesPerSession
+      session.messages = session.messages.slice(-keepCount)
+      session.updatedAt = Date.now()
+      console.log(`清理会话 ${sessionId} 的旧消息，保留最近 ${keepCount} 条`)
+    }
+  }
+
+  // 自动清理旧会话
+  const autoCleanupSessions = () => {
+    const limits = getSessionLimits()
+    if (chatSessions.value.length > limits.autoCleanupThreshold) {
+      // 按更新时间排序，删除最旧的会话
+      const sortedSessions = [...chatSessions.value].sort((a, b) => b.updatedAt - a.updatedAt)
+      const keepCount = limits.maxSessions
+      const sessionsToKeep = sortedSessions.slice(0, keepCount)
+
+      chatSessions.value = sessionsToKeep
+      console.log(`自动清理旧会话，保留最近 ${keepCount} 个会话`)
+    }
+  }
+
   // 消息操作
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>): string => {
     if (!currentSessionId.value) {
@@ -235,6 +271,12 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     if (session.messages.length === 1 && message.role === 'user') {
       session.title = generateChatTitle(message.content)
     }
+
+    // 检查是否需要清理消息
+    cleanupSessionMessages(session.id)
+
+    // 检查是否需要清理会话
+    autoCleanupSessions()
 
     return messageId
   }
@@ -375,7 +417,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
           shortcuts.value = { ...shortcuts.value, ...data.aiAssistantShortcuts }
         if (data.aiAssistantSidebarState) {
           // 恢复侧边栏设置，但不强制关闭状态（让用户控制）
-          const { isOpen, ...otherSidebarState } = data.aiAssistantSidebarState
+          const { isOpen: _isOpen, ...otherSidebarState } = data.aiAssistantSidebarState
+          // _isOpen 用于解构但不使用，避免 lint 错误
+          void _isOpen // 明确标记为已使用
           sidebarState.value = {
             ...sidebarState.value,
             ...otherSidebarState,
@@ -388,7 +432,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
         if (data.shortcuts) shortcuts.value = { ...shortcuts.value, ...data.shortcuts }
         if (data.sidebarState) {
           // 兼容旧格式，但不强制关闭状态
-          const { isOpen, ...otherSidebarState } = data.sidebarState
+          const { isOpen: _isOpenOld, ...otherSidebarState } = data.sidebarState
+          // _isOpenOld 用于解构但不使用，避免 lint 错误
+          void _isOpenOld // 明确标记为已使用
           sidebarState.value = {
             ...sidebarState.value,
             ...otherSidebarState,
@@ -521,13 +567,29 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
 
     // 监听来自 content script 的消息
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      const messageListener = (message: any, sender: any, sendResponse: any) => {
         if (message.type === 'PAGE_CONTENT_EXTRACTED') {
           handleExtractedContent(message.content)
           sendResponse({ success: true })
         }
         return true
-      })
+      }
+
+      chrome.runtime.onMessage.addListener(messageListener)
+
+      // 设置清理函数
+      messageListenerCleanup = () => {
+        chrome.runtime.onMessage.removeListener(messageListener)
+      }
+    }
+  }
+
+  // 清理所有监听器和资源
+  const cleanup = () => {
+    // 清理消息监听器
+    if (messageListenerCleanup) {
+      messageListenerCleanup()
+      messageListenerCleanup = null
     }
   }
 
@@ -590,6 +652,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     saveSessions,
     loadSettings,
     loadSessions,
+
+    // 初始化和清理
     initialize,
+    cleanup,
   }
 })

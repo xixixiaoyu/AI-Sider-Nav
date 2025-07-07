@@ -28,17 +28,23 @@
       <!-- 底部提示 -->
       <div class="footer-hint">"第一个人类本性，第二是文学天赋的问题。"</div>
     </div>
+
+    <!-- 性能监控组件（仅开发环境） -->
+    <PerformanceMonitor />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted } from 'vue'
+  import { onMounted, onUnmounted } from 'vue'
   import TimeDisplay from '@/components/TimeDisplay.vue'
   import SearchBox from '@/components/SearchBox.vue'
   import TextSelectionCopy from '@/components/TextSelectionCopy.vue'
   import AISidebar from '@/components/AISidebar.vue'
   import AISidebarTrigger from '@/components/AISidebarTrigger.vue'
+  import PerformanceMonitor from '@/components/PerformanceMonitor.vue'
   import { useAppStore, useSettingsStore, useAIAssistantStore } from '@/stores'
+  import { memoryMonitor } from '@/utils/memoryMonitor'
+  import { resourceManager } from '@/utils/resourceManager'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
@@ -46,14 +52,47 @@
 
   // 应用初始化
   onMounted(async () => {
-    // 加载用户设置
-    await settingsStore.loadSettings()
+    try {
+      // 启动内存监控
+      if (import.meta.env.DEV) {
+        memoryMonitor.startMonitoring()
+        console.log('🔍 内存监控已启动')
+      }
 
-    // 加载搜索历史
-    await appStore.loadSearchHistory()
+      // 加载用户设置
+      await settingsStore.loadSettings()
 
-    // 初始化 AI 助手
-    await aiAssistantStore.initialize()
+      // 加载搜索历史
+      await appStore.loadSearchHistory()
+
+      // 初始化 AI 助手
+      await aiAssistantStore.initialize()
+
+      console.log('✅ 应用初始化完成')
+    } catch (error) {
+      console.error('❌ 应用初始化失败:', error)
+    }
+  })
+
+  // 应用清理
+  onUnmounted(() => {
+    try {
+      // 清理 AI 助手资源
+      aiAssistantStore.cleanup()
+
+      // 清理设置存储监听器
+      settingsStore.cleanupStorageListener()
+
+      // 清理资源管理器
+      resourceManager.cleanup()
+
+      // 停止内存监控
+      memoryMonitor.cleanup()
+
+      console.log('✅ 应用清理完成')
+    } catch (error) {
+      console.error('❌ 应用清理失败:', error)
+    }
   })
 </script>
 

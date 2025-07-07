@@ -178,18 +178,29 @@ export class ContentExtractor {
     // 克隆元素以避免修改原始 DOM
     const clone = element.cloneNode(true) as Element
 
-    // 移除不需要的元素
-    this.excludeSelectors.forEach((selector) => {
-      const elements = clone.querySelectorAll(selector)
-      elements.forEach((el) => el.remove())
-    })
+    try {
+      // 移除不需要的元素
+      this.excludeSelectors.forEach((selector) => {
+        const elements = clone.querySelectorAll(selector)
+        elements.forEach((el) => el.remove())
+      })
 
-    // 处理特殊元素
-    this.processSpecialElements(clone)
+      // 处理特殊元素
+      this.processSpecialElements(clone)
 
-    // 提取文本并清理
-    const text = clone.textContent || ''
-    return this.cleanText(text)
+      // 提取文本并清理
+      const text = clone.textContent || ''
+      return this.cleanText(text)
+    } finally {
+      // 清理克隆的元素以释放内存
+      if (clone.parentNode) {
+        clone.parentNode.removeChild(clone)
+      }
+      // 清理所有子节点引用
+      while (clone.firstChild) {
+        clone.removeChild(clone.firstChild)
+      }
+    }
   }
 
   /**
@@ -197,9 +208,7 @@ export class ContentExtractor {
    */
   private processSpecialElements(element: Element): void {
     // 为块级元素添加换行
-    const blockElements = element.querySelectorAll(
-      'p, div, h1, h2, h3, h4, h5, h6, li, br, hr'
-    )
+    const blockElements = element.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, br, hr')
     blockElements.forEach((el) => {
       if (el.tagName === 'BR' || el.tagName === 'HR') {
         el.textContent = '\n'
@@ -417,7 +426,7 @@ export class ContentExtractor {
 
       // 收集章节内容
       if (currentSection) {
-        let nextHeading = headingElements[index + 1]
+        const nextHeading = headingElements[index + 1]
         let element = heading.nextElementSibling
 
         while (element && element !== nextHeading) {

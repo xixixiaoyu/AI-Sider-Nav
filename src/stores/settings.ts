@@ -158,10 +158,19 @@ export const useSettingsStore = defineStore('settings', () => {
     await saveSettings()
   }
 
+  // 存储监听器清理函数
+  let storageListenerCleanup: (() => void) | null = null
+
   // 设置存储监听器
   const setupStorageListener = () => {
+    // 清理之前的监听器
+    if (storageListenerCleanup) {
+      storageListenerCleanup()
+      storageListenerCleanup = null
+    }
+
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.onChanged.addListener((changes, namespace) => {
+      const chromeStorageListener = (changes: any, namespace: string) => {
         if (namespace === 'sync' && changes.aiSiderNavSettings) {
           const newData = changes.aiSiderNavSettings.newValue
           if (newData) {
@@ -169,10 +178,17 @@ export const useSettingsStore = defineStore('settings', () => {
             settings.value = { ...defaultSettings, ...userSettings }
           }
         }
-      })
+      }
+
+      chrome.storage.onChanged.addListener(chromeStorageListener)
+
+      // 设置清理函数
+      storageListenerCleanup = () => {
+        chrome.storage.onChanged.removeListener(chromeStorageListener)
+      }
     } else {
       // 开发环境使用 localStorage 事件监听
-      window.addEventListener('storage', (event) => {
+      const localStorageListener = (event: StorageEvent) => {
         if (event.key === 'aiSiderNavSettings' && event.newValue) {
           try {
             const data = JSON.parse(event.newValue)
@@ -182,7 +198,22 @@ export const useSettingsStore = defineStore('settings', () => {
             console.error('Failed to parse settings from storage event:', error)
           }
         }
-      })
+      }
+
+      window.addEventListener('storage', localStorageListener)
+
+      // 设置清理函数
+      storageListenerCleanup = () => {
+        window.removeEventListener('storage', localStorageListener)
+      }
+    }
+  }
+
+  // 清理存储监听器
+  const cleanupStorageListener = () => {
+    if (storageListenerCleanup) {
+      storageListenerCleanup()
+      storageListenerCleanup = null
     }
   }
 
@@ -197,5 +228,6 @@ export const useSettingsStore = defineStore('settings', () => {
     addCustomSearchEngine,
     removeCustomSearchEngine,
     setupStorageListener,
+    cleanupStorageListener,
   }
 })
