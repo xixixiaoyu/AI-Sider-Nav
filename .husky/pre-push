@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 运行推送前检查..."
+
+# 运行 TypeScript 类型检查
+echo "📝 检查 TypeScript 类型..."
+npx vue-tsc --noEmit
+if [ $? -ne 0 ]; then
+    echo "❌ TypeScript 类型检查失败"
+    exit 1
+fi
+
+# 运行完整的 ESLint 检查
+echo "🔧 运行 ESLint 检查..."
+npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ ESLint 检查失败"
+    exit 1
+fi
+
+# 运行构建检查
+echo "🏗️ 运行构建检查..."
+npm run build:check
+if [ $? -ne 0 ]; then
+    echo "❌ 构建检查失败"
+    exit 1
+fi
+
+echo "✅ 所有检查通过，可以推送"

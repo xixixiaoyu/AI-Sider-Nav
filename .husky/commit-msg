@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 检查提交信息格式
+# 格式: type(scope): description
+# 例如: feat(ui): add new sidebar component
+
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .{1,50}'
+
+if ! grep -qE "$commit_regex" "$1"; then
+    echo "❌ 提交信息格式不正确!"
+    echo "正确格式: type(scope): description"
+    echo "类型 (type): feat, fix, docs, style, refactor, test, chore, perf, ci, build"
+    echo "范围 (scope): 可选，如 ui, api, core 等"
+    echo "描述 (description): 简洁明了的描述，不超过50字符"
+    echo ""
+    echo "示例:"
+    echo "  feat(ui): add new sidebar component"
+    echo "  fix(api): resolve authentication issue"
+    echo "  docs: update README with setup instructions"
+    exit 1
+fi
+
+echo "✅ 提交信息格式正确"
