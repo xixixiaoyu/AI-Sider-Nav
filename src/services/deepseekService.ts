@@ -83,9 +83,9 @@ const API_URL = 'https://api.deepseek.com/chat/completions'
 // 请求管理器
 class RequestManager {
   private activeRequests = new Map<string, AbortController>()
-  private requestQueue: Array<{ id: string; request: () => Promise<any> }> = []
-  private maxConcurrentRequests = 3
-  private activeRequestCount = 0
+  // private requestQueue: Array<{ id: string; request: () => Promise<any> }> = []
+  // private maxConcurrentRequests = 3
+  // private activeRequestCount = 0
 
   // 创建新的请求控制器
   createRequest(id: string): AbortController {
@@ -150,9 +150,9 @@ export async function getAIStreamResponse(
 ): Promise<void> {
   let buffer = ''
   let isReading = true
+  const requestId = `stream-${Date.now()}`
 
   try {
-    const requestId = `stream-${Date.now()}`
     const abortController = requestManager.createRequest(requestId)
     const signal = abortController.signal
 

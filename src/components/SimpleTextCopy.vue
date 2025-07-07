@@ -14,6 +14,7 @@
   import { ref, computed, onMounted, onUnmounted } from 'vue'
   import { useSettingsStore } from '@/stores/settings'
   import { resourceManager } from '@/utils/resourceManager'
+  /// <reference types="vite/client" />
 
   const settingsStore = useSettingsStore()
   const settings = computed(() => settingsStore.settings)
@@ -23,7 +24,7 @@
   const showToast = ref(false)
   const selectedText = ref('')
   const buttonStyle = ref({
-    position: 'fixed',
+    position: 'fixed' as const,
     top: '100px',
     left: '100px',
     zIndex: 9999,
@@ -111,7 +112,7 @@
     }
   }
 
-  const handleClickOutside = (event: MouseEvent) => {
+  const handleClickOutside = (event: Event) => {
     const target = event.target as HTMLElement
     if (!target.closest('.simple-copy-button')) {
       showButton.value = false

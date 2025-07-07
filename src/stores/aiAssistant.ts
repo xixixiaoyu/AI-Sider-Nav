@@ -567,7 +567,7 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
 
     // 监听来自 content script 的消息
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const messageListener = (message: any, sender: any, sendResponse: any) => {
+      const messageListener = (message: any, _sender: any, sendResponse: any) => {
         if (message.type === 'PAGE_CONTENT_EXTRACTED') {
           handleExtractedContent(message.content)
           sendResponse({ success: true })

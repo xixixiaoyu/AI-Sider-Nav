@@ -41,7 +41,7 @@
     <Transition name="thinking-content">
       <div v-if="isExpanded" class="thinking-content">
         <div class="thinking-text">
-          {{ content }}
+          {{ props.content }}
           <span class="thinking-cursor">|</span>
         </div>
       </div>
@@ -58,11 +58,11 @@
   import { ref } from 'vue'
   import { i18n } from '@/i18n'
 
-  // interface Props {
-  //   content: string
-  // } // 暂时未使用
+  interface Props {
+    content: string
+  }
 
-  // const props = defineProps<Props>() // 暂时未使用
+  const props = defineProps<Props>()
 
   const isExpanded = ref(false)
 

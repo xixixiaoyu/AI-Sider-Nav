@@ -132,18 +132,15 @@
   )
 
   // 处理滚动事件
-  // let isUserScrolling = false // 暂时未使用
   let scrollTimeout: number | null = null
 
   const handleScroll = () => {
-    isUserScrolling = true
-
     if (scrollTimeout) {
       clearTimeout(scrollTimeout)
     }
 
     scrollTimeout = window.setTimeout(() => {
-      isUserScrolling = false
+      // 滚动结束处理
     }, 150)
   }
 
