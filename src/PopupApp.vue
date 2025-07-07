@@ -60,26 +60,6 @@
           </div>
         </div>
 
-        <!-- AI 助手设置 -->
-        <div class="setting-section">
-          <div class="section-title">AI 助手</div>
-
-          <!-- 显示触发按钮 -->
-          <div class="toggle-option">
-            <div class="toggle-info">
-              <span class="toggle-label">显示触发按钮</span>
-              <span class="toggle-desc">在网页右下角显示 AI 助手触发按钮</span>
-            </div>
-            <div
-              class="toggle-switch"
-              :class="{ active: aiSettings.showTriggerButton }"
-              @click="toggleTriggerButton"
-            >
-              <div class="toggle-slider"></div>
-            </div>
-          </div>
-        </div>
-
         <!-- 文本选择复制功能 -->
         <div class="setting-section">
           <div class="section-title">文本复制</div>
@@ -128,6 +108,26 @@
                 @input="updateAutoHideDelay"
                 class="range-slider"
               />
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 助手设置 -->
+        <div class="setting-section">
+          <div class="section-title">AI 助手</div>
+
+          <!-- 显示触发按钮 -->
+          <div class="toggle-option">
+            <div class="toggle-info">
+              <span class="toggle-label">显示触发按钮</span>
+              <span class="toggle-desc">在网页右下角显示 AI 助手触发按钮</span>
+            </div>
+            <div
+              class="toggle-switch"
+              :class="{ active: aiSettings.showTriggerButton }"
+              @click="toggleTriggerButton"
+            >
+              <div class="toggle-slider"></div>
             </div>
           </div>
         </div>
