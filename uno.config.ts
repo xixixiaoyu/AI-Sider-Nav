@@ -41,18 +41,65 @@ export default defineConfig({
       mono: ['JetBrains Mono', 'Consolas', 'monospace'],
     },
     animation: {
-      'fade-in': 'fadeIn 0.5s ease-in-out',
-      'slide-up': 'slideUp 0.3s ease-out',
-      'bounce-in': 'bounceIn 0.6s ease-out',
+      // 轻快动画 - 更短的持续时间和流畅的缓动
+      'fade-in': 'fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'fade-in-fast': 'fadeIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'slide-up': 'slideUp 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'slide-down': 'slideDown 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'slide-left': 'slideLeft 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'slide-right': 'slideRight 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'bounce-in': 'bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      'zoom-in': 'zoomIn 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      'zoom-in-fast': 'zoomIn 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      pulse: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      float: 'float 2s ease-in-out infinite',
+      'float-slow': 'float 3s ease-in-out infinite',
+      shake: 'shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97)',
+      spin: 'spin 1s linear infinite',
+      'spin-fast': 'spin 0.5s linear infinite',
+      'spin-slow': 'spin 2s linear infinite',
+    },
+
+    // 轻快的过渡时间
+    transitionDuration: {
+      fast: '150ms',
+      normal: '250ms',
+      slow: '350ms',
+    },
+
+    // 优化的缓动函数
+    transitionTimingFunction: {
+      'ease-out-quart': 'cubic-bezier(0.25, 1, 0.5, 1)',
+      'ease-out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
+      'ease-out-back': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      'ease-in-out-circ': 'cubic-bezier(0.85, 0, 0.15, 1)',
+      'ease-spring': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
     },
   },
   shortcuts: {
     // 常用组合样式
     'btn-primary':
-      'bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors',
-    card: 'bg-white rounded-lg shadow-md p-4',
+      'bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-fast hover:scale-105 active:scale-95 gpu-accelerated',
+    'btn-secondary':
+      'bg-secondary-200 hover:bg-secondary-300 text-secondary-800 px-4 py-2 rounded-lg transition-fast hover:scale-105 active:scale-95 gpu-accelerated',
+    card: 'bg-white rounded-lg shadow-md p-4 transition-smooth hover:shadow-lg hover:-translate-y-1 gpu-accelerated',
+    'card-interactive':
+      'bg-white rounded-lg shadow-md p-4 transition-bounce hover:shadow-xl hover:-translate-y-2 hover:scale-102 cursor-pointer gpu-accelerated',
     'input-field':
-      'border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500',
+      'border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-fast focus:scale-102 gpu-accelerated',
+
+    // 轻快动画组合
+    'animate-enter': 'animate-fade-in animate-slide-up',
+    'animate-enter-fast': 'animate-fade-in-fast animate-zoom-in-fast',
+    'animate-hover': 'transition-fast hover:scale-105 hover:-translate-y-1',
+    'animate-hover-bounce': 'transition-bounce hover:scale-110 hover:-translate-y-2',
+    'animate-click': 'transition-fast active:scale-95',
+
+    // 性能优化组合
+    'smooth-transform': 'transition-fast will-change-transform gpu-accelerated',
+    'smooth-opacity': 'transition-fast will-change-opacity',
+    'smooth-all': 'transition-smooth will-change-auto gpu-accelerated',
   },
   rules: [
     // 自定义规则

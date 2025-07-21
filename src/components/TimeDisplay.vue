@@ -1,31 +1,19 @@
 <template>
   <div class="time-display">
-    <div
-      class="time clickable"
-      :class="{ 'calendar-enabled': settingsStore.settings.calendar.enabled }"
-      @click="handleTimeClick"
-      :title="settingsStore.settings.calendar.enabled ? '点击查看日历' : ''"
-    >
+    <div class="time">
       {{ formattedTime }}
     </div>
     <div class="date">{{ formattedDate }}</div>
-
-    <!-- 日历模态框 -->
-    <CalendarModal v-model:visible="showCalendar" @date-selected="handleDateSelected" />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, onUnmounted, computed, ref } from 'vue'
+  import { onMounted, onUnmounted, computed } from 'vue'
   import { useAppStore, useSettingsStore } from '@/stores'
-  import CalendarModal from './CalendarModal.vue'
   import { resourceManager } from '@/utils/resourceManager'
 
   const appStore = useAppStore()
   const settingsStore = useSettingsStore()
-
-  // 日历相关状态
-  const showCalendar = ref(false)
 
   // 响应式计算属性
   const formattedTime = computed(() => {
@@ -39,18 +27,6 @@
   const formattedDate = computed(() => {
     return appStore.formatDate(settingsStore.settings.language)
   })
-
-  // 方法
-  const handleTimeClick = () => {
-    if (settingsStore.settings.calendar.enabled) {
-      showCalendar.value = true
-    }
-  }
-
-  const handleDateSelected = (date: Date) => {
-    console.log('Selected date:', date)
-    // 这里可以添加日期选择后的逻辑
-  }
 
   let timeInterval: number | null = null
 
@@ -92,15 +68,6 @@
     -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     transition: all 0.2s ease;
-  }
-
-  .time.clickable.calendar-enabled {
-    cursor: pointer;
-  }
-
-  .time.clickable.calendar-enabled:hover {
-    transform: scale(1.02);
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
   }
 
   .date {

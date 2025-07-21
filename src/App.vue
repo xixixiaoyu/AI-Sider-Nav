@@ -144,7 +144,9 @@
     height: 100vh;
     padding: 8rem 2rem 2rem;
     z-index: 1;
-    animation: fadeInUp 1s ease-out;
+    animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .time-section {
@@ -159,11 +161,11 @@
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(30px);
+      transform: translate3d(0, 20px, 0);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0);
     }
   }
 
@@ -174,9 +176,10 @@
     font-size: 0.875rem;
     text-align: center;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 1s ease-out 1s both;
+    animation: fadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.4s both;
     max-width: 90%;
     padding: 0 1rem;
+    transform: translateZ(0);
   }
 
   /* 响应式设计 */

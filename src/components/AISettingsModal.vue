@@ -337,7 +337,8 @@
     border-radius: 6px;
     font-size: 14px;
     color: #374151;
-    transition: border-color 0.2s ease;
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
   }
 
   .input-field:focus,
@@ -345,6 +346,7 @@
     outline: none;
     border-color: #14b8a6;
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+    transform: scale(1.01) translateZ(0);
   }
 
   .toggle-btn {
@@ -354,12 +356,14 @@
     background: white;
     color: #6b7280;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
   }
 
   .toggle-btn:hover {
     background: #f9fafb;
     color: #374151;
+    transform: scale(1.02) translateZ(0);
   }
 
   .slider-group {
@@ -440,7 +444,8 @@
     border-radius: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateZ(0);
   }
 
   .btn-secondary {
@@ -450,6 +455,7 @@
 
   .btn-secondary:hover {
     background: #e5e7eb;
+    transform: scale(1.02) translateZ(0);
   }
 
   .btn-primary {
@@ -458,20 +464,31 @@
   }
 
   .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+    transform: translateY(-2px) scale(1.02) translateZ(0);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.3);
+  }
+
+  .btn-primary:active {
+    transform: translateY(-1px) scale(0.98) translateZ(0);
   }
 
   /* 动画 */
-  .modal-enter-active,
-  .modal-leave-active {
-    transition: all 0.3s ease;
+  .modal-enter-active {
+    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
-  .modal-enter-from,
+  .modal-leave-active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .modal-enter-from {
+    opacity: 0;
+    transform: scale3d(0.95, 0.95, 1) translateZ(0);
+  }
+
   .modal-leave-to {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale3d(0.9, 0.9, 1) translateZ(0);
   }
 
   /* 响应式 */

@@ -99,18 +99,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: thinking-pulse 2s infinite;
+    animation: thinking-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    transform: translateZ(0);
   }
 
   @keyframes thinking-pulse {
     0%,
     100% {
-      transform: scale(1);
+      transform: scale3d(1, 1, 1);
       opacity: 1;
     }
     50% {
-      transform: scale(1.1);
-      opacity: 0.8;
+      transform: scale3d(1.05, 1.05, 1);
+      opacity: 0.85;
     }
   }
 
@@ -128,10 +129,11 @@
     background: transparent;
     color: #0ea5e9;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: translateZ(0);
   }
 
   .thinking-toggle:hover {
@@ -163,7 +165,7 @@
 
   .thinking-cursor {
     display: inline-block;
-    animation: blink 1s infinite;
+    animation: blink 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     margin-left: 2px;
     color: #0ea5e9;
   }
@@ -192,23 +194,24 @@
   .progress-bar {
     height: 100%;
     background: linear-gradient(90deg, #0ea5e9, #06b6d4);
-    animation: progress-flow 2s infinite;
+    animation: progress-flow 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     width: 30%;
+    transform: translateZ(0);
   }
 
   @keyframes progress-flow {
     0% {
-      transform: translateX(-100%);
+      transform: translate3d(-100%, 0, 0);
     }
     100% {
-      transform: translateX(400%);
+      transform: translate3d(400%, 0, 0);
     }
   }
 
   /* 展开/收起动画 */
   .thinking-content-enter-active,
   .thinking-content-leave-active {
-    transition: all 0.3s ease;
+    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     overflow: hidden;
   }
 

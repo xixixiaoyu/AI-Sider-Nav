@@ -6,18 +6,35 @@ describe('SettingsStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
-    localStorage.clear()
 
     // 重置 localStorage mock 方法
-    localStorage.getItem = vi.fn().mockReturnValue(null)
-    localStorage.setItem = vi.fn()
-    localStorage.removeItem = vi.fn()
+    const localStorageMock = {
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    }
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorageMock,
+      writable: true,
+    })
 
     // 重置 chrome.storage mock
-    const chromeStorageMock = window.chrome.storage.sync
-    chromeStorageMock.get.mockClear().mockResolvedValue({})
-    chromeStorageMock.set.mockClear().mockResolvedValue(undefined)
-    chromeStorageMock.remove.mockClear().mockResolvedValue(undefined)
+    const chromeStorageMock = {
+      sync: {
+        get: vi.fn().mockResolvedValue({}),
+        set: vi.fn().mockResolvedValue(undefined),
+        remove: vi.fn().mockResolvedValue(undefined),
+      },
+      onChanged: {
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      },
+    }
+    Object.defineProperty(window, 'chrome', {
+      value: { storage: chromeStorageMock },
+      writable: true,
+    })
   })
 
   describe('初始状态', () => {
@@ -31,11 +48,6 @@ describe('SettingsStore', () => {
         language: 'zh-CN',
         showSeconds: false,
         customSearchEngines: [],
-        calendar: {
-          enabled: true,
-          weekStartsOn: 'monday',
-          showWeekNumbers: false,
-        },
         textSelection: {
           enabled: true,
           showCopyButton: true,
@@ -69,22 +81,15 @@ describe('SettingsStore', () => {
     it('应该能够更新嵌套设置项', async () => {
       const store = useSettingsStore()
 
-      // 由于 updateSetting 不支持点号路径，我们需要更新整个对象
-      await store.updateSetting('calendar', {
-        ...store.settings.calendar,
-        enabled: false,
-        weekStartsOn: 'sunday',
-      })
-
-      expect(store.settings.calendar.enabled).toBe(false)
-      expect(store.settings.calendar.weekStartsOn).toBe('sunday')
-
+      // 更新文本选择设置
       await store.updateSetting('textSelection', {
         ...store.settings.textSelection,
         enabled: false,
+        autoHideDelay: 3000,
       })
 
       expect(store.settings.textSelection.enabled).toBe(false)
+      expect(store.settings.textSelection.autoHideDelay).toBe(3000)
     })
 
     it('应该在更新设置时保存到存储', async () => {
@@ -187,7 +192,7 @@ describe('SettingsStore', () => {
         language: 'en-US',
       }
 
-      window.chrome.storage.sync.get.mockResolvedValue({
+      vi.mocked(window.chrome.storage.sync.get).mockResolvedValue({
         aiSiderNavSettings: savedSettings,
       })
 
@@ -209,7 +214,7 @@ describe('SettingsStore', () => {
         resolvePromise = resolve
       })
 
-      window.chrome.storage.sync.get.mockReturnValue(loadPromise)
+      vi.mocked(window.chrome.storage.sync.get).mockReturnValue(loadPromise)
 
       const loadSettingsPromise = store.loadSettings()
       expect(store.isLoading).toBe(true)
@@ -223,7 +228,7 @@ describe('SettingsStore', () => {
     it('应该处理存储加载错误', async () => {
       const store = useSettingsStore()
 
-      window.chrome.storage.sync.get.mockRejectedValue(new Error('Storage error'))
+      vi.mocked(window.chrome.storage.sync.get).mockRejectedValue(new Error('Storage error'))
 
       await store.loadSettings()
 
@@ -245,7 +250,7 @@ describe('SettingsStore', () => {
         searchEngine: 'baidu',
         timeFormat: '12h',
       }
-      localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(localStorageSettings))
+      vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(localStorageSettings))
 
       await store.loadSettings()
 
@@ -298,7 +303,7 @@ describe('SettingsStore', () => {
       const store = useSettingsStore()
 
       // 确保 mock 是干净的
-      window.chrome.storage.sync.set.mockClear()
+      vi.mocked(window.chrome.storage.sync.set).mockClear()
 
       await store.resetSettings()
 
@@ -306,7 +311,7 @@ describe('SettingsStore', () => {
       expect(window.chrome.storage.sync.set).toHaveBeenCalled()
 
       // 验证保存的数据包含重置后的设置
-      const callArgs = window.chrome.storage.sync.set.mock.calls[0][0]
+      const callArgs = vi.mocked(window.chrome.storage.sync.set).mock.calls[0][0]
       expect(callArgs.aiSiderNavSettings).toMatchObject({
         searchEngine: 'google',
         timeFormat: '24h',

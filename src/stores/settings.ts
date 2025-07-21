@@ -12,12 +12,6 @@ export interface UserSettings {
     url: string
     icon?: string
   }>
-  // 日历相关设置
-  calendar: {
-    enabled: boolean
-    weekStartsOn: 'monday' | 'sunday'
-    showWeekNumbers: boolean
-  }
   // 文本选择复制功能设置
   textSelection: {
     enabled: boolean
@@ -37,11 +31,6 @@ export const useSettingsStore = defineStore('settings', () => {
     language: 'zh-CN',
     showSeconds: false,
     customSearchEngines: [],
-    calendar: {
-      enabled: true,
-      weekStartsOn: 'monday',
-      showWeekNumbers: false,
-    },
     textSelection: {
       enabled: true,
       showCopyButton: true,

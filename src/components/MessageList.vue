@@ -202,26 +202,27 @@
     height: 6px;
     border-radius: 50%;
     background: #14b8a6;
-    animation: loading-pulse 1.4s ease-in-out infinite both;
+    animation: loading-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite both;
+    transform: translateZ(0);
   }
 
   .dot:nth-child(1) {
-    animation-delay: -0.32s;
+    animation-delay: -0.2s;
   }
 
   .dot:nth-child(2) {
-    animation-delay: -0.16s;
+    animation-delay: -0.1s;
   }
 
   @keyframes loading-pulse {
     0%,
     80%,
     100% {
-      transform: scale(0.8);
-      opacity: 0.5;
+      transform: scale3d(0.85, 0.85, 1);
+      opacity: 0.6;
     }
     40% {
-      transform: scale(1);
+      transform: scale3d(1.1, 1.1, 1);
       opacity: 1;
     }
   }
