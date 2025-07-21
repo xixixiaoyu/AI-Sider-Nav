@@ -152,6 +152,14 @@ export async function getAIStreamResponse(
   let isReading = true
   const requestId = `stream-${Date.now()}`
 
+  // Buffer 管理配置
+  const MAX_BUFFER_SIZE = 1024 * 1024 // 1MB
+  const BUFFER_WARNING_SIZE = 512 * 1024 // 512KB
+  let bufferOverflowCount = 0
+
+  // 创建可复用的 TextDecoder
+  const decoder = new TextDecoder()
+
   try {
     const abortController = requestManager.createRequest(requestId)
     const signal = abortController.signal
@@ -198,33 +206,53 @@ export async function getAIStreamResponse(
         break
       }
 
-      buffer += new TextDecoder().decode(value)
+      // 使用可复用的 decoder
+      const chunk = decoder.decode(value, { stream: true })
+      buffer += chunk
+
+      // 检查 buffer 大小，防止内存过度使用
+      if (buffer.length > MAX_BUFFER_SIZE) {
+        bufferOverflowCount++
+        console.warn(
+          `Stream buffer 超过限制 (${Math.round(buffer.length / 1024)}KB)，执行部分处理 (第${bufferOverflowCount}次)`
+        )
+
+        // 处理当前 buffer 的前半部分，保留后半部分
+        const midPoint = Math.floor(buffer.length / 2)
+        const lastNewlineIndex = buffer.lastIndexOf('\n', midPoint)
+        const processPoint = lastNewlineIndex > 0 ? lastNewlineIndex : midPoint
+
+        const bufferToProcess = buffer.substring(0, processPoint)
+        buffer = buffer.substring(processPoint)
+
+        // 处理截取的部分
+        const lines = bufferToProcess.split('\n')
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            processStreamLine(line, onChunk, onThinking)
+          }
+        }
+
+        // 如果 buffer 仍然过大，强制清理
+        if (buffer.length > BUFFER_WARNING_SIZE) {
+          console.warn('Buffer 仍然过大，强制重置')
+          buffer = ''
+        }
+
+        continue
+      }
+
+      // 正常处理逻辑
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const jsonData = line.slice(6)
-          if (jsonData === '[DONE]') {
+          const result = processStreamLine(line, onChunk, onThinking)
+          if (result === 'DONE') {
             isReading = false
-            onChunk('[DONE]')
             requestManager.cleanupRequest(requestId)
             return
-          }
-          try {
-            const parsedData: AIStreamResponse = JSON.parse(jsonData)
-            const content = parsedData.choices[0]?.delta?.content
-            const reasoningContent = parsedData.choices[0]?.delta?.reasoning_content
-
-            if (content) {
-              onChunk(content)
-            }
-
-            if (reasoningContent && onThinking) {
-              onThinking(reasoningContent)
-            }
-          } catch (error) {
-            handleError(error, i18n.global.t('jsonParseError'), 'DeepSeekService')
           }
         }
       }
@@ -238,8 +266,45 @@ export async function getAIStreamResponse(
       throw error
     }
   } finally {
+    // 确保清理
+    buffer = ''
     requestManager.cleanupRequest(requestId)
+
+    if (bufferOverflowCount > 0) {
+      console.log(`流式响应完成，共处理了 ${bufferOverflowCount} 次 buffer 溢出`)
+    }
   }
+}
+
+// 提取流式数据处理逻辑，减少重复代码
+function processStreamLine(
+  line: string,
+  onChunk: (chunk: string) => void,
+  onThinking?: (thinking: string) => void
+): 'DONE' | 'CONTINUE' {
+  const jsonData = line.slice(6)
+  if (jsonData === '[DONE]') {
+    onChunk('[DONE]')
+    return 'DONE'
+  }
+
+  try {
+    const parsedData: AIStreamResponse = JSON.parse(jsonData)
+    const content = parsedData.choices[0]?.delta?.content
+    const reasoningContent = parsedData.choices[0]?.delta?.reasoning_content
+
+    if (content) {
+      onChunk(content)
+    }
+
+    if (reasoningContent && onThinking) {
+      onThinking(reasoningContent)
+    }
+  } catch (error) {
+    handleError(error, i18n.global.t('jsonParseError'), 'DeepSeekService')
+  }
+
+  return 'CONTINUE'
 }
 
 export async function getAIResponse(userMessage: string, temperature = 0.3): Promise<string> {

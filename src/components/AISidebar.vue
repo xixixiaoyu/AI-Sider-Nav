@@ -303,14 +303,13 @@
     const { key, ctrlKey, altKey, shiftKey, metaKey } = e
     const shortcuts = aiStore.shortcuts
 
-    // 检查切换侧边栏快捷键
+    // 检查切换侧边栏快捷键 (支持 Command+K 或 Ctrl+K)
     const toggleShortcut = shortcuts.toggleSidebar
     if (
       key.toLowerCase() === toggleShortcut.key.toLowerCase() &&
-      ctrlKey === !!toggleShortcut.ctrlKey &&
+      (metaKey || ctrlKey) && // 支持 Command+K (Mac) 或 Ctrl+K (Windows/Linux)
       altKey === !!toggleShortcut.altKey &&
-      shiftKey === !!toggleShortcut.shiftKey &&
-      metaKey === !!toggleShortcut.metaKey
+      shiftKey === !!toggleShortcut.shiftKey
     ) {
       e.preventDefault()
       aiStore.toggleSidebar()

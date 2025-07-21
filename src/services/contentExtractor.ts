@@ -67,6 +67,20 @@ export interface SectionInfo {
  */
 export class ContentExtractor {
   private document: Document
+
+  // 内容大小限制
+  private readonly MAX_CONTENT_SIZE = 500 * 1024 // 500KB
+  private readonly MAX_IMAGES = 10
+  private readonly MAX_TABLES = 5
+  private readonly MAX_LISTS = 8
+  private readonly MAX_HEADINGS = 50
+  private readonly MAX_SECTIONS = 20
+
+  // 单个元素大小限制
+  private readonly MAX_TEXT_LENGTH = 100 * 1024 // 100KB
+  private readonly MAX_TABLE_CELLS = 1000
+  private readonly MAX_LIST_ITEMS = 200
+
   private excludeSelectors = [
     'nav',
     'header',
@@ -103,15 +117,48 @@ export class ContentExtractor {
    * 提取完整的页面内容
    */
   extractContent(): ExtractedContent {
-    return {
-      title: this.extractTitle(),
-      url: this.document.location?.href || '',
-      mainContent: this.extractMainContent(),
-      images: this.extractImages(),
-      tables: this.extractTables(),
-      lists: this.extractLists(),
-      metadata: this.extractMetadata(),
-      structure: this.extractStructure(),
+    const startTime = Date.now()
+    console.log('🔍 开始提取页面内容')
+
+    try {
+      const content: ExtractedContent = {
+        title: this.extractTitle(),
+        url: this.document.location?.href || '',
+        mainContent: this.extractMainContent(),
+        images: this.extractImages(),
+        tables: this.extractTables(),
+        lists: this.extractLists(),
+        metadata: this.extractMetadata(),
+        structure: this.extractStructure(),
+      }
+
+      // 检查总内容大小
+      const contentSize = this.estimateContentSize(content)
+      console.log(
+        `📊 内容提取完成，大小: ${(contentSize / 1024).toFixed(2)}KB，耗时: ${Date.now() - startTime}ms`
+      )
+
+      if (contentSize > this.MAX_CONTENT_SIZE) {
+        console.warn(
+          `⚠️ 内容大小超限 (${(contentSize / 1024).toFixed(2)}KB > ${(this.MAX_CONTENT_SIZE / 1024).toFixed(2)}KB)，进行压缩`
+        )
+        return this.compressContent(content)
+      }
+
+      return content
+    } catch (error) {
+      console.error('❌ 内容提取失败:', error)
+      // 返回基本内容
+      return {
+        title: this.extractTitle(),
+        url: this.document.location?.href || '',
+        mainContent: '内容提取失败',
+        images: [],
+        tables: [],
+        lists: [],
+        metadata: { wordCount: 0, readingTime: 0 },
+        structure: { headings: [], sections: [] },
+      }
     }
   }
 
@@ -166,7 +213,15 @@ export class ContentExtractor {
       mainElement = this.document.body
     }
 
-    return this.extractTextFromElement(mainElement)
+    const content = this.extractTextFromElement(mainElement)
+
+    // 限制文本长度
+    if (content.length > this.MAX_TEXT_LENGTH) {
+      console.warn(`⚠️ 主要内容过长 (${content.length} > ${this.MAX_TEXT_LENGTH})，进行截断`)
+      return content.substring(0, this.MAX_TEXT_LENGTH) + '\n\n[内容已截断以节省内存]'
+    }
+
+    return content
   }
 
   /**
@@ -234,17 +289,28 @@ export class ContentExtractor {
   private extractImages(): ImageInfo[] {
     const images: ImageInfo[] = []
     const imgElements = this.document.querySelectorAll('img')
+    let processedCount = 0
 
-    imgElements.forEach((img) => {
+    for (const img of imgElements) {
+      if (processedCount >= this.MAX_IMAGES) {
+        console.warn(`⚠️ 图片数量超限，只处理前 ${this.MAX_IMAGES} 张`)
+        break
+      }
+
       const src = img.src
-      if (!src || src.startsWith('data:')) return // 跳过 base64 图片
+      if (!src || src.startsWith('data:')) continue // 跳过 base64 图片
+
+      // 跳过小图片和装饰性图片
+      const width = img.naturalWidth || img.width || 0
+      const height = img.naturalHeight || img.height || 0
+      if (width < 50 || height < 50) continue
 
       const imageInfo: ImageInfo = {
         src,
-        alt: img.alt || '',
-        title: img.title,
-        width: img.naturalWidth || img.width,
-        height: img.naturalHeight || img.height,
+        alt: (img.alt || '').substring(0, 200), // 限制 alt 文本长度
+        title: (img.title || '').substring(0, 200),
+        width,
+        height,
       }
 
       // 查找图片说明
@@ -252,12 +318,13 @@ export class ContentExtractor {
       if (figure) {
         const figcaption = figure.querySelector('figcaption')
         if (figcaption) {
-          imageInfo.caption = figcaption.textContent?.trim()
+          imageInfo.caption = (figcaption.textContent?.trim() || '').substring(0, 300)
         }
       }
 
       images.push(imageInfo)
-    })
+      processedCount++
+    }
 
     return images
   }
@@ -268,44 +335,69 @@ export class ContentExtractor {
   private extractTables(): TableInfo[] {
     const tables: TableInfo[] = []
     const tableElements = this.document.querySelectorAll('table')
+    let processedCount = 0
 
-    tableElements.forEach((table) => {
+    for (const table of tableElements) {
+      if (processedCount >= this.MAX_TABLES) {
+        console.warn(`⚠️ 表格数量超限，只处理前 ${this.MAX_TABLES} 个`)
+        break
+      }
+
       const headers: string[] = []
       const rows: string[][] = []
+      let cellCount = 0
 
       // 提取表头
       const headerCells = table.querySelectorAll('thead th, thead td, tr:first-child th')
-      headerCells.forEach((cell) => {
-        headers.push(cell.textContent?.trim() || '')
-      })
+      for (const cell of headerCells) {
+        if (cellCount >= this.MAX_TABLE_CELLS) break
+        const text = (cell.textContent?.trim() || '').substring(0, 200)
+        headers.push(text)
+        cellCount++
+      }
 
       // 提取数据行
       const dataRows = table.querySelectorAll('tbody tr, tr')
-      dataRows.forEach((row, index) => {
+      let rowIndex = 0
+      for (const row of dataRows) {
+        if (cellCount >= this.MAX_TABLE_CELLS) {
+          console.warn(`⚠️ 表格单元格数量超限，停止处理`)
+          break
+        }
+
         // 跳过表头行
-        if (index === 0 && headerCells.length > 0) return
+        if (rowIndex === 0 && headerCells.length > 0) {
+          rowIndex++
+          continue
+        }
 
         const cells = row.querySelectorAll('td, th')
         const rowData: string[] = []
-        cells.forEach((cell) => {
-          rowData.push(cell.textContent?.trim() || '')
-        })
+        for (const cell of cells) {
+          if (cellCount >= this.MAX_TABLE_CELLS) break
+          const text = (cell.textContent?.trim() || '').substring(0, 200)
+          rowData.push(text)
+          cellCount++
+        }
+
         if (rowData.length > 0) {
           rows.push(rowData)
         }
-      })
+        rowIndex++
+      }
 
       // 查找表格标题
       let caption = ''
       const captionElement = table.querySelector('caption')
       if (captionElement) {
-        caption = captionElement.textContent?.trim() || ''
+        caption = (captionElement.textContent?.trim() || '').substring(0, 200)
       }
 
       if (headers.length > 0 || rows.length > 0) {
         tables.push({ headers, rows, caption })
+        processedCount++
       }
-    })
+    }
 
     return tables
   }
@@ -316,17 +408,30 @@ export class ContentExtractor {
   private extractLists(): ListInfo[] {
     const lists: ListInfo[] = []
     const listElements = this.document.querySelectorAll('ul, ol')
+    let processedCount = 0
 
-    listElements.forEach((list) => {
+    for (const list of listElements) {
+      if (processedCount >= this.MAX_LISTS) {
+        console.warn(`⚠️ 列表数量超限，只处理前 ${this.MAX_LISTS} 个`)
+        break
+      }
+
       const items: string[] = []
       const listItems = list.querySelectorAll('li')
+      let itemCount = 0
 
-      listItems.forEach((item) => {
-        const text = item.textContent?.trim()
+      for (const item of listItems) {
+        if (itemCount >= this.MAX_LIST_ITEMS) {
+          console.warn(`⚠️ 列表项数量超限，只处理前 ${this.MAX_LIST_ITEMS} 项`)
+          break
+        }
+
+        const text = (item.textContent?.trim() || '').substring(0, 300)
         if (text) {
           items.push(text)
+          itemCount++
         }
-      })
+      }
 
       if (items.length > 0) {
         const listInfo: ListInfo = {
@@ -337,14 +442,128 @@ export class ContentExtractor {
         // 查找列表标题
         const prevElement = list.previousElementSibling
         if (prevElement && /^h[1-6]$/i.test(prevElement.tagName)) {
-          listInfo.title = prevElement.textContent?.trim()
+          listInfo.title = (prevElement.textContent?.trim() || '').substring(0, 200)
         }
 
         lists.push(listInfo)
+        processedCount++
       }
-    })
+    }
 
     return lists
+  }
+
+  /**
+   * 估算内容大小（字节）
+   */
+  private estimateContentSize(content: ExtractedContent): number {
+    let size = 0
+
+    // 文本内容
+    size += (content.title?.length || 0) * 2 // UTF-16
+    size += (content.url?.length || 0) * 2
+    size += (content.mainContent?.length || 0) * 2
+
+    // 图片信息
+    content.images.forEach((img) => {
+      size += (img.src?.length || 0) * 2
+      size += (img.alt?.length || 0) * 2
+      size += (img.title?.length || 0) * 2
+      size += (img.caption?.length || 0) * 2
+      size += 32 // 数字字段
+    })
+
+    // 表格信息
+    content.tables.forEach((table) => {
+      table.headers.forEach((header) => (size += (header?.length || 0) * 2))
+      table.rows.forEach((row) => {
+        row.forEach((cell) => (size += (cell?.length || 0) * 2))
+      })
+      size += (table.caption?.length || 0) * 2
+    })
+
+    // 列表信息
+    content.lists.forEach((list) => {
+      list.items.forEach((item) => (size += (item?.length || 0) * 2))
+      size += (list.title?.length || 0) * 2
+    })
+
+    // 结构信息
+    content.structure.headings.forEach((heading) => {
+      size += (heading.text?.length || 0) * 2
+      size += (heading.id?.length || 0) * 2
+    })
+
+    content.structure.sections.forEach((section) => {
+      size += (section.title?.length || 0) * 2
+      size += (section.content?.length || 0) * 2
+    })
+
+    // 元数据
+    const metadata = content.metadata
+    size += (metadata.description?.length || 0) * 2
+    size += (metadata.keywords?.length || 0) * 2
+    size += (metadata.author?.length || 0) * 2
+    size += (metadata.publishDate?.length || 0) * 2
+    size += (metadata.language?.length || 0) * 2
+
+    return size
+  }
+
+  /**
+   * 压缩内容以减少内存使用
+   */
+  private compressContent(content: ExtractedContent): ExtractedContent {
+    console.log('🗜️ 开始压缩内容')
+
+    const compressed: ExtractedContent = {
+      ...content,
+      // 压缩主要内容
+      mainContent:
+        content.mainContent.length > this.MAX_TEXT_LENGTH / 2
+          ? content.mainContent.substring(0, this.MAX_TEXT_LENGTH / 2) + '\n\n[内容已压缩]'
+          : content.mainContent,
+
+      // 减少图片数量
+      images: content.images.slice(0, Math.floor(this.MAX_IMAGES / 2)),
+
+      // 减少表格数量和大小
+      tables: content.tables.slice(0, Math.floor(this.MAX_TABLES / 2)).map((table) => ({
+        ...table,
+        headers: table.headers.slice(0, 10),
+        rows: table.rows.slice(0, 20).map((row) => row.slice(0, 10)),
+      })),
+
+      // 减少列表数量和项目
+      lists: content.lists.slice(0, Math.floor(this.MAX_LISTS / 2)).map((list) => ({
+        ...list,
+        items: list.items.slice(0, Math.floor(this.MAX_LIST_ITEMS / 2)),
+      })),
+
+      // 压缩结构信息
+      structure: {
+        headings: content.structure.headings.slice(0, Math.floor(this.MAX_HEADINGS / 2)),
+        sections: content.structure.sections
+          .slice(0, Math.floor(this.MAX_SECTIONS / 2))
+          .map((section) => ({
+            ...section,
+            content:
+              section.content.length > 500
+                ? section.content.substring(0, 500) + '...'
+                : section.content,
+          })),
+      },
+    }
+
+    const originalSize = this.estimateContentSize(content)
+    const compressedSize = this.estimateContentSize(compressed)
+    const compressionRatio = (((originalSize - compressedSize) / originalSize) * 100).toFixed(1)
+
+    console.log(
+      `🗜️ 内容压缩完成，压缩率: ${compressionRatio}% (${(originalSize / 1024).toFixed(2)}KB → ${(compressedSize / 1024).toFixed(2)}KB)`
+    )
+
+    return compressed
   }
 
   /**

@@ -31,6 +31,14 @@ export interface SummaryMetadata {
  * 网页内容总结器
  */
 export class SummaryService {
+  // 内容大小限制
+  private readonly MAX_CONTENT_SIZE = 300 * 1024 // 300KB
+  private readonly MAX_PROMPT_LENGTH = 50000 // 50K 字符
+  private readonly MAX_IMAGES = 5
+  private readonly MAX_TABLES = 3
+  private readonly MAX_LISTS = 5
+  private readonly MAX_HEADINGS = 20
+
   /**
    * 对提取的内容进行总结
    */
@@ -39,10 +47,99 @@ export class SummaryService {
     onProgress?: (chunk: string) => void
   ): Promise<SummaryResult> {
     const startTime = Date.now()
+    console.log('📝 开始内容总结')
+
+    // 预处理内容以控制大小
+    const processedContent = this.preprocessContent(content)
 
     // 构建总结提示词
-    const prompt = this.buildSummaryPrompt(content)
+    const prompt = this.buildSummaryPrompt(processedContent)
 
+    // 检查提示词长度
+    if (prompt.length > this.MAX_PROMPT_LENGTH) {
+      console.warn(`⚠️ 提示词过长 (${prompt.length} > ${this.MAX_PROMPT_LENGTH})，进行截断`)
+      const truncatedContent = this.truncateContent(processedContent)
+      const truncatedPrompt = this.buildSummaryPrompt(truncatedContent)
+      return this.performSummarization(truncatedPrompt, truncatedContent, startTime, onProgress)
+    }
+
+    return this.performSummarization(prompt, processedContent, startTime, onProgress)
+  }
+
+  /**
+   * 预处理内容以控制大小
+   */
+  private preprocessContent(content: ExtractedContent): ExtractedContent {
+    console.log('🔧 预处理内容')
+
+    return {
+      ...content,
+      // 限制主要内容长度
+      mainContent:
+        content.mainContent.length > 20000
+          ? content.mainContent.substring(0, 20000) + '\n\n[内容已截断]'
+          : content.mainContent,
+
+      // 限制图片数量
+      images: content.images.slice(0, this.MAX_IMAGES),
+
+      // 限制表格数量和大小
+      tables: content.tables.slice(0, this.MAX_TABLES).map((table) => ({
+        ...table,
+        headers: table.headers.slice(0, 8),
+        rows: table.rows.slice(0, 10).map((row) => row.slice(0, 8)),
+      })),
+
+      // 限制列表数量和项目
+      lists: content.lists.slice(0, this.MAX_LISTS).map((list) => ({
+        ...list,
+        items: list.items.slice(0, 20),
+      })),
+
+      // 限制标题数量
+      structure: {
+        ...content.structure,
+        headings: content.structure.headings.slice(0, this.MAX_HEADINGS),
+        sections: content.structure.sections.slice(0, 10),
+      },
+    }
+  }
+
+  /**
+   * 截断内容以适应提示词长度限制
+   */
+  private truncateContent(content: ExtractedContent): ExtractedContent {
+    console.log('✂️ 截断内容以适应长度限制')
+
+    return {
+      ...content,
+      mainContent: content.mainContent.substring(0, 10000) + '\n\n[内容已大幅截断]',
+      images: content.images.slice(0, 2),
+      tables: content.tables.slice(0, 1).map((table) => ({
+        ...table,
+        headers: table.headers.slice(0, 5),
+        rows: table.rows.slice(0, 5).map((row) => row.slice(0, 5)),
+      })),
+      lists: content.lists.slice(0, 2).map((list) => ({
+        ...list,
+        items: list.items.slice(0, 10),
+      })),
+      structure: {
+        headings: content.structure.headings.slice(0, 10),
+        sections: content.structure.sections.slice(0, 5),
+      },
+    }
+  }
+
+  /**
+   * 执行总结
+   */
+  private async performSummarization(
+    prompt: string,
+    content: ExtractedContent,
+    startTime: number,
+    onProgress?: (chunk: string) => void
+  ): Promise<SummaryResult> {
     // 准备消息
     const messages: Message[] = [
       {
@@ -57,11 +154,21 @@ export class SummaryService {
 
     // 调用 AI 进行总结
     let fullResponse = ''
+    let responseSize = 0
+    const maxResponseSize = 100 * 1024 // 100KB 响应大小限制
+
     await getAIStreamResponse(
       messages,
       (chunk: string) => {
         if (chunk === '[DONE]') return
         if (chunk === '[ABORTED]') return
+
+        responseSize += chunk.length * 2 // UTF-16
+        if (responseSize > maxResponseSize) {
+          console.warn('⚠️ AI 响应过长，停止接收')
+          return
+        }
+
         fullResponse += chunk
         onProgress?.(chunk)
       },
@@ -71,6 +178,11 @@ export class SummaryService {
 
     // 解析 AI 响应
     const summaryResult = this.parseAIResponse(fullResponse, content, startTime)
+
+    console.log(
+      `📝 总结完成，耗时: ${Date.now() - startTime}ms，响应大小: ${(responseSize / 1024).toFixed(2)}KB`
+    )
+
     return summaryResult
   }
 

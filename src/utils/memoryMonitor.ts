@@ -23,9 +23,12 @@ class MemoryMonitor {
   private observers: PerformanceObserver[] = []
   private timers: Set<number> = new Set()
   private isMonitoring = false
-  private maxMetricsHistory = 100
+  private maxMetricsHistory = 50 // 减少历史记录数量
   private warningThreshold = 50 * 1024 * 1024 // 50MB
   private criticalThreshold = 100 * 1024 * 1024 // 100MB
+  private emergencyThreshold = 150 * 1024 * 1024 // 150MB 紧急阈值
+  private lastCleanupTime = 0
+  private cleanupInterval = 60000 // 1分钟清理间隔
 
   /**
    * 开始监控
@@ -87,13 +90,28 @@ class MemoryMonitor {
 
     this.metrics.push(metrics)
 
-    // 限制历史记录数量
+    // 更严格的历史记录管理
     if (this.metrics.length > this.maxMetricsHistory) {
-      this.metrics = this.metrics.slice(-this.maxMetricsHistory)
+      // 保留最近的记录，但也保留一些采样点用于趋势分析
+      const recentCount = Math.floor(this.maxMetricsHistory * 0.7) // 70% 最近记录
+      const sampleCount = this.maxMetricsHistory - recentCount // 30% 采样记录
+
+      const recent = this.metrics.slice(-recentCount)
+      const older = this.metrics.slice(0, -recentCount)
+
+      // 从旧记录中采样
+      const sampled = older.filter(
+        (_, index) => index % Math.ceil(older.length / sampleCount) === 0
+      )
+
+      this.metrics = [...sampled, ...recent]
     }
 
     // 检查内存使用情况
     this.checkMemoryUsage(metrics)
+
+    // 定期清理
+    this.performPeriodicCleanup()
   }
 
   /**
@@ -101,12 +119,24 @@ class MemoryMonitor {
    */
   private checkMemoryUsage(metrics: MemoryMetrics) {
     const usedMB = metrics.usedJSHeapSize / 1024 / 1024
+    const totalMB = metrics.totalJSHeapSize / 1024 / 1024
+    const limitMB = metrics.jsHeapSizeLimit / 1024 / 1024
+    const usagePercent = (metrics.usedJSHeapSize / metrics.jsHeapSizeLimit) * 100
 
-    if (usedMB > this.criticalThreshold / 1024 / 1024) {
-      console.error(`🚨 内存使用严重超标: ${usedMB.toFixed(2)}MB`)
+    if (usedMB > this.emergencyThreshold / 1024 / 1024 || usagePercent > 80) {
+      console.error(
+        `🚨 内存使用紧急状态: ${usedMB.toFixed(2)}MB (${usagePercent.toFixed(1)}% of limit)`
+      )
+      this.emergencyCleanup()
+    } else if (usedMB > this.criticalThreshold / 1024 / 1024 || usagePercent > 60) {
+      console.error(
+        `🚨 内存使用严重超标: ${usedMB.toFixed(2)}MB (${usagePercent.toFixed(1)}% of limit)`
+      )
       this.triggerGarbageCollection()
-    } else if (usedMB > this.warningThreshold / 1024 / 1024) {
-      console.warn(`⚠️ 内存使用较高: ${usedMB.toFixed(2)}MB`)
+      this.notifyMemoryPressure('critical', { usedMB, totalMB, limitMB, usagePercent })
+    } else if (usedMB > this.warningThreshold / 1024 / 1024 || usagePercent > 40) {
+      console.warn(`⚠️ 内存使用较高: ${usedMB.toFixed(2)}MB (${usagePercent.toFixed(1)}% of limit)`)
+      this.notifyMemoryPressure('warning', { usedMB, totalMB, limitMB, usagePercent })
     }
   }
 
@@ -178,6 +208,108 @@ class MemoryMonitor {
     if ('gc' in window && typeof (window as any).gc === 'function') {
       console.log('🗑️ 触发垃圾回收')
       ;(window as any).gc()
+    } else {
+      // 如果没有 gc 函数，尝试其他清理方法
+      this.forceMemoryCleanup()
+    }
+  }
+
+  /**
+   * 强制内存清理
+   */
+  private forceMemoryCleanup() {
+    console.log('🧹 执行强制内存清理')
+
+    // 清理历史记录
+    this.metrics = this.metrics.slice(-10) // 只保留最近 10 条
+
+    // 清理可能的循环引用
+    if (typeof window !== 'undefined') {
+      // 清理全局变量中的大对象
+      Object.keys(window).forEach((key) => {
+        if (key.startsWith('temp_') || key.startsWith('cache_') || key.startsWith('_debug')) {
+          try {
+            delete (window as any)[key]
+          } catch (e) {
+            // 忽略删除失败
+          }
+        }
+      })
+    }
+
+    // 触发浏览器的内存压力事件（如果支持）
+    if ('memory' in navigator && 'pressure' in (navigator as any).memory) {
+      try {
+        ;(navigator as any).memory.pressure.addEventListener('change', () => {
+          console.log('浏览器内存压力变化')
+        })
+      } catch (e) {
+        // 忽略不支持的 API
+      }
+    }
+  }
+
+  /**
+   * 紧急清理
+   */
+  private emergencyCleanup() {
+    console.error('🚨 执行紧急内存清理')
+
+    // 清理所有历史记录
+    this.metrics = []
+
+    // 强制清理
+    this.forceMemoryCleanup()
+
+    // 通知应用进行紧急清理
+    this.notifyMemoryPressure('emergency', {
+      action: 'emergency_cleanup',
+      timestamp: Date.now(),
+    })
+
+    // 尝试垃圾回收
+    this.triggerGarbageCollection()
+  }
+
+  /**
+   * 定期清理
+   */
+  private performPeriodicCleanup() {
+    const now = Date.now()
+    if (now - this.lastCleanupTime < this.cleanupInterval) {
+      return
+    }
+
+    this.lastCleanupTime = now
+
+    // 清理过期的指标数据
+    const cutoffTime = now - 30 * 60 * 1000 // 30分钟前
+    this.metrics = this.metrics.filter((metric) => metric.timestamp > cutoffTime)
+
+    console.log(`🧹 定期清理完成，保留 ${this.metrics.length} 条内存记录`)
+  }
+
+  /**
+   * 通知内存压力
+   */
+  private notifyMemoryPressure(level: 'warning' | 'critical' | 'emergency', data: any) {
+    // 发送自定义事件
+    const event = new CustomEvent('memoryPressure', {
+      detail: { level, data, timestamp: Date.now() },
+    })
+    window.dispatchEvent(event)
+
+    // 如果在扩展环境中，通知背景脚本
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      try {
+        chrome.runtime.sendMessage({
+          type: 'MEMORY_PRESSURE',
+          level,
+          data,
+        })
+      } catch (e) {
+        // 忽略发送失败
+      }
     }
   }
 
@@ -247,11 +379,52 @@ class MemoryMonitor {
   }
 
   /**
+   * 获取内存使用统计
+   */
+  getMemoryStats() {
+    if (this.metrics.length === 0) return null
+
+    const recent = this.metrics.slice(-10)
+    const usedSizes = recent.map((m) => m.usedJSHeapSize)
+
+    return {
+      current: recent[recent.length - 1],
+      average: usedSizes.reduce((a, b) => a + b, 0) / usedSizes.length,
+      peak: Math.max(...usedSizes),
+      trend: this.calculateMemoryTrend(recent),
+      recordCount: this.metrics.length,
+    }
+  }
+
+  /**
+   * 检查内存健康状态
+   */
+  checkMemoryHealth(): 'healthy' | 'warning' | 'critical' | 'emergency' {
+    const current = this.getCurrentMemoryUsage()
+    if (!current) return 'healthy'
+
+    const usedMB = current.usedJSHeapSize / 1024 / 1024
+    const usagePercent = (current.usedJSHeapSize / current.jsHeapSizeLimit) * 100
+
+    if (usedMB > this.emergencyThreshold / 1024 / 1024 || usagePercent > 80) {
+      return 'emergency'
+    } else if (usedMB > this.criticalThreshold / 1024 / 1024 || usagePercent > 60) {
+      return 'critical'
+    } else if (usedMB > this.warningThreshold / 1024 / 1024 || usagePercent > 40) {
+      return 'warning'
+    }
+
+    return 'healthy'
+  }
+
+  /**
    * 清理资源
    */
   cleanup() {
+    console.log('🧹 清理内存监控器资源')
     this.stopMonitoring()
     this.metrics = []
+    this.lastCleanupTime = 0
   }
 }
 

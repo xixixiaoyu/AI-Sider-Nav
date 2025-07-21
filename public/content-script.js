@@ -121,7 +121,13 @@
       this.button.textContent = CONFIG.labels.copy
       this.button.style.display = 'none'
       document.body.appendChild(this.button)
-      this.button.addEventListener('click', this.boundHandleClick)
+
+      // 使用全局资源管理器添加点击事件监听器
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addListener(this.button, 'click', this.boundHandleClick)
+      } else {
+        this.button.addEventListener('click', this.boundHandleClick)
+      }
     }
 
     /**
@@ -164,11 +170,23 @@
 
       // 使用用户设置的自动隐藏延迟
       const hideDelay = this.settings.textSelection?.autoHideDelay || 2000
-      setTimeout(() => {
-        this.button.textContent = CONFIG.labels.copy
-        this.button.classList.remove('copied', 'error')
-        this.hide()
-      }, hideDelay)
+
+      // 使用全局资源管理器管理定时器
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addTimer(
+          setTimeout(() => {
+            this.button.textContent = CONFIG.labels.copy
+            this.button.classList.remove('copied', 'error')
+            this.hide()
+          }, hideDelay)
+        )
+      } else {
+        setTimeout(() => {
+          this.button.textContent = CONFIG.labels.copy
+          this.button.classList.remove('copied', 'error')
+          this.hide()
+        }, hideDelay)
+      }
     }
 
     /**
@@ -219,10 +237,19 @@
      * 设置所有事件监听器
      */
     setupEventListeners() {
-      document.addEventListener('mouseup', this.boundHandleMouseUp)
-      document.addEventListener('mousedown', this.boundHandleMouseDown)
-      window.addEventListener('scroll', this.debouncedHide)
-      window.addEventListener('resize', this.debouncedHide)
+      // 使用全局资源管理器添加事件监听器
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addListener(document, 'mouseup', this.boundHandleMouseUp)
+        globalResourceManager.addListener(document, 'mousedown', this.boundHandleMouseDown)
+        globalResourceManager.addListener(window, 'scroll', this.debouncedHide)
+        globalResourceManager.addListener(window, 'resize', this.debouncedHide)
+      } else {
+        // 回退到直接添加（如果全局资源管理器不可用）
+        document.addEventListener('mouseup', this.boundHandleMouseUp)
+        document.addEventListener('mousedown', this.boundHandleMouseDown)
+        window.addEventListener('scroll', this.debouncedHide)
+        window.addEventListener('resize', this.debouncedHide)
+      }
     }
 
     /**
@@ -231,23 +258,46 @@
     handleMouseUp(event) {
       if (!this.isEnabled || event.target === this.button) return
 
-      setTimeout(() => {
-        const selection = window.getSelection()
-        if (selection.toString().trim()) {
-          // 检查是否显示复制按钮
-          const showButton = this.settings.textSelection?.showCopyButton !== false
-          if (showButton) {
-            // 获取选择区域的位置
-            if (selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0)
-              const rect = range.getBoundingClientRect()
-              this.show(selection, rect)
+      // 使用全局资源管理器管理定时器
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addTimer(
+          setTimeout(() => {
+            const selection = window.getSelection()
+            if (selection.toString().trim()) {
+              // 检查是否显示复制按钮
+              const showButton = this.settings.textSelection?.showCopyButton !== false
+              if (showButton) {
+                // 获取选择区域的位置
+                if (selection.rangeCount > 0) {
+                  const range = selection.getRangeAt(0)
+                  const rect = range.getBoundingClientRect()
+                  this.show(selection, rect)
+                }
+              }
+            } else {
+              this.hide()
             }
+          }, 10)
+        ) // 短暂延迟确保选择完成
+      } else {
+        setTimeout(() => {
+          const selection = window.getSelection()
+          if (selection.toString().trim()) {
+            // 检查是否显示复制按钮
+            const showButton = this.settings.textSelection?.showCopyButton !== false
+            if (showButton) {
+              // 获取选择区域的位置
+              if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0)
+                const rect = range.getBoundingClientRect()
+                this.show(selection, rect)
+              }
+            }
+          } else {
+            this.hide()
           }
-        } else {
-          this.hide()
-        }
-      }, 10) // 短暂延迟确保选择完成
+        }, 10) // 短暂延迟确保选择完成
+      }
     }
 
     /**
@@ -265,8 +315,20 @@
     debounce(func, wait) {
       let timeout
       return function (...args) {
-        clearTimeout(timeout)
+        if (timeout) {
+          clearTimeout(timeout)
+          // 如果使用了全局资源管理器，从中移除旧的定时器
+          if (typeof globalResourceManager !== 'undefined') {
+            globalResourceManager.timers.delete(timeout)
+          }
+        }
+
         timeout = setTimeout(() => func.apply(this, args), wait)
+
+        // 如果使用了全局资源管理器，添加新的定时器
+        if (typeof globalResourceManager !== 'undefined') {
+          globalResourceManager.addTimer(timeout)
+        }
       }
     }
 
@@ -274,19 +336,29 @@
      * 清理资源方法
      */
     destroy() {
-      // 移除所有事件监听
-      document.removeEventListener('mouseup', this.boundHandleMouseUp)
-      document.removeEventListener('mousedown', this.boundHandleMouseDown)
-      window.removeEventListener('scroll', this.debouncedHide)
-      window.removeEventListener('resize', this.debouncedHide)
+      // 注意：如果使用了全局资源管理器，事件监听器会在页面卸载时自动清理
+      // 这里只需要清理按钮特定的资源
+
+      // 如果全局资源管理器不可用，手动移除事件监听器
+      if (typeof globalResourceManager === 'undefined') {
+        document.removeEventListener('mouseup', this.boundHandleMouseUp)
+        document.removeEventListener('mousedown', this.boundHandleMouseDown)
+        window.removeEventListener('scroll', this.debouncedHide)
+        window.removeEventListener('resize', this.debouncedHide)
+      }
 
       if (this.button) {
-        this.button.removeEventListener('click', this.boundHandleClick)
+        // 如果全局资源管理器不可用，手动移除按钮事件监听器
+        if (typeof globalResourceManager === 'undefined') {
+          this.button.removeEventListener('click', this.boundHandleClick)
+        }
         if (this.button.parentNode) {
           this.button.parentNode.removeChild(this.button)
         }
         this.button = null
       }
+
+      console.log('✅ QuickCopyButton 实例已销毁')
     }
   }
 
@@ -385,8 +457,15 @@
       startX = e.clientX
       startWidth = aiAssistantState.width
 
-      document.addEventListener('mousemove', handleResize)
-      document.addEventListener('mouseup', stopResize)
+      // 使用全局资源管理器添加动态事件监听器
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addListener(document, 'mousemove', handleResize)
+        globalResourceManager.addListener(document, 'mouseup', stopResize)
+      } else {
+        document.addEventListener('mousemove', handleResize)
+        document.addEventListener('mouseup', stopResize)
+      }
+
       document.body.style.cursor = 'col-resize'
       document.body.style.userSelect = 'none'
 
@@ -423,8 +502,14 @@
       if (!isResizing) return
 
       isResizing = false
-      document.removeEventListener('mousemove', handleResize)
-      document.removeEventListener('mouseup', stopResize)
+
+      // 注意：如果使用了全局资源管理器，这些动态事件监听器会在页面卸载时自动清理
+      // 但为了立即停止拖拽，我们仍需要手动移除
+      if (typeof globalResourceManager === 'undefined') {
+        document.removeEventListener('mousemove', handleResize)
+        document.removeEventListener('mouseup', stopResize)
+      }
+
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
 
@@ -436,7 +521,7 @@
     }
 
     // 绑定事件
-    resizeHandle.addEventListener('mousedown', startResize)
+    globalResourceManager.addListener(resizeHandle, 'mousedown', startResize)
   }
 
   // 从存储加载设置
@@ -513,18 +598,21 @@
     })
 
     // 悬停效果
-    button.addEventListener('mouseenter', () => {
+    const mouseEnterHandler = () => {
       button.style.transform = 'scale(1.1)'
       button.style.boxShadow = '0 6px 20px rgba(20, 184, 166, 0.4)'
-    })
+    }
 
-    button.addEventListener('mouseleave', () => {
+    const mouseLeaveHandler = () => {
       button.style.transform = 'scale(1)'
       button.style.boxShadow = '0 4px 12px rgba(20, 184, 166, 0.3)'
-    })
+    }
+
+    globalResourceManager.addListener(button, 'mouseenter', mouseEnterHandler)
+    globalResourceManager.addListener(button, 'mouseleave', mouseLeaveHandler)
 
     // 点击事件
-    button.addEventListener('click', toggleAISidebar)
+    globalResourceManager.addListener(button, 'click', toggleAISidebar)
 
     document.body.appendChild(button)
     return button
@@ -578,14 +666,18 @@
     })
 
     // 手柄悬停效果
-    resizeHandle.addEventListener('mouseenter', () => {
+    const handleMouseEnter = () => {
       resizeHandle.style.backgroundColor = '#14b8a6'
-    })
-    resizeHandle.addEventListener('mouseleave', () => {
+    }
+
+    const handleMouseLeave = () => {
       if (!isResizing) {
         resizeHandle.style.backgroundColor = 'transparent'
       }
-    })
+    }
+
+    globalResourceManager.addListener(resizeHandle, 'mouseenter', handleMouseEnter)
+    globalResourceManager.addListener(resizeHandle, 'mouseleave', handleMouseLeave)
 
     sidebar.appendChild(resizeHandle)
 
@@ -810,17 +902,18 @@
 
     // 关闭按钮事件
     const closeBtn = sidebar.querySelector('#ai-sidebar-close')
-    closeBtn.addEventListener('click', toggleAISidebar)
+    globalResourceManager.addListener(closeBtn, 'click', toggleAISidebar)
 
     // 打开新标签页按钮事件
     const newTabBtn = sidebar.querySelector('#ai-open-newtab')
-    newTabBtn.addEventListener('click', () => {
+    const newTabHandler = () => {
       if (typeof chrome !== 'undefined' && chrome.tabs) {
         chrome.tabs.create({ url: 'chrome://newtab/' })
       } else {
         window.open('about:newtab', '_blank')
       }
-    })
+    }
+    globalResourceManager.addListener(newTabBtn, 'click', newTabHandler)
 
     // 设置拖拽调整功能
     setupResizeHandlers(sidebar, resizeHandle)
@@ -860,9 +953,9 @@
 
   // 全局快捷键监听
   function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-      // Ctrl+K 切换侧边栏
-      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+    const keydownHandler = (e) => {
+      // Command+K 切换侧边栏 (Mac) 或 Ctrl+K (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         toggleAISidebar()
       }
@@ -872,13 +965,15 @@
         e.preventDefault()
         toggleAISidebar()
       }
-    })
+    }
+
+    globalResourceManager.addListener(document, 'keydown', keydownHandler)
   }
 
   // 监听设置变化
   function setupSettingsListener() {
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.onChanged.addListener((changes, namespace) => {
+      const settingsChangeHandler = (changes, namespace) => {
         if (namespace === 'sync' && changes.aiSiderNavSettings) {
           const newSettings = changes.aiSiderNavSettings.newValue
           if (newSettings && newSettings.aiAssistant) {
@@ -886,6 +981,16 @@
             updateUI()
           }
         }
+      }
+
+      chrome.storage.onChanged.addListener(settingsChangeHandler)
+
+      // 将监听器添加到资源管理器（Chrome API 监听器需要特殊处理）
+      globalResourceManager.listeners.add({
+        element: chrome.storage.onChanged,
+        event: 'changed',
+        handler: settingsChangeHandler,
+        cleanup: () => chrome.storage.onChanged.removeListener(settingsChangeHandler),
       })
     }
   }
@@ -913,8 +1018,16 @@
       const existingScript = document.getElementById('marked-script')
       if (existingScript) {
         // 如果脚本已存在但 marked 对象还不可用，等待加载完成
-        existingScript.addEventListener('load', () => resolve())
-        existingScript.addEventListener('error', (e) => reject(e))
+        const loadHandler = () => resolve()
+        const errorHandler = (e) => reject(e)
+
+        if (typeof globalResourceManager !== 'undefined') {
+          globalResourceManager.addListener(existingScript, 'load', loadHandler)
+          globalResourceManager.addListener(existingScript, 'error', errorHandler)
+        } else {
+          existingScript.addEventListener('load', loadHandler)
+          existingScript.addEventListener('error', errorHandler)
+        }
         return
       }
 
@@ -922,8 +1035,18 @@
       script.id = 'marked-script'
       // 使用本地版本避免 CSP 问题
       script.src = chrome.runtime.getURL('libs/marked.min.js')
-      script.onload = () => resolve()
-      script.onerror = (e) => reject(e)
+
+      const loadHandler = () => resolve()
+      const errorHandler = (e) => reject(e)
+
+      if (typeof globalResourceManager !== 'undefined') {
+        globalResourceManager.addListener(script, 'load', loadHandler)
+        globalResourceManager.addListener(script, 'error', errorHandler)
+      } else {
+        script.onload = loadHandler
+        script.onerror = errorHandler
+      }
+
       document.head.appendChild(script)
     })
   }
@@ -931,10 +1054,20 @@
   // 初始化
   async function init() {
     try {
+      console.log('🚀 AI Sider Nav: 开始初始化...')
       await loadMarkedScript()
+      console.log('✅ AI Sider Nav: Markdown 渲染器加载成功')
+
+      // 验证 marked.js 是否正确加载
+      if (typeof window.marked === 'function') {
+        console.log('✅ window.marked 函数可用')
+      } else {
+        console.warn('⚠️ window.marked 函数不可用，Markdown 渲染将回退到纯文本')
+      }
     } catch (error) {
-      console.error('AI Sider Nav: Markdown 渲染器加载失败。', error)
+      console.error('❌ AI Sider Nav: Markdown 渲染器加载失败', error)
     }
+
     await loadSettings()
     await loadSidebarWidth()
 
@@ -947,6 +1080,8 @@
       setupKeyboardShortcuts()
       setupSettingsListener()
     }
+
+    console.log('🎉 AI Sider Nav: 初始化完成')
   }
 
   // 设置对话界面功能
@@ -1048,37 +1183,92 @@
       if (isUser) {
         messageContent.textContent = content
       } else {
+        // 确保 marked.js 已加载后再进行 markdown 渲染
         if (typeof window.marked === 'function') {
-          messageContent.innerHTML = window.marked(content)
-          // 优化 AI 消息中的代码块样式
-          const codeBlocks = messageContent.querySelectorAll('pre code')
-          codeBlocks.forEach((block) => {
-            block.style.cssText = `
-              background: #f7fafc;
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-              padding: 12px;
-              font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-              font-size: 13px;
-              line-height: 1.4;
-              overflow-x: auto;
-            `
-          })
-          // 优化行内代码样式
-          const inlineCodes = messageContent.querySelectorAll('code:not(pre code)')
-          inlineCodes.forEach((code) => {
-            code.style.cssText = `
-              background: #f7fafc;
-              border: 1px solid #e2e8f0;
-              border-radius: 4px;
-              padding: 2px 6px;
-              font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-              font-size: 12px;
-              color: #e53e3e;
-            `
-          })
+          console.log('✅ marked.js 已加载，正在渲染 markdown')
+          try {
+            messageContent.innerHTML = window.marked(content)
+            // 优化 AI 消息中的代码块样式
+            const codeBlocks = messageContent.querySelectorAll('pre code')
+            codeBlocks.forEach((block) => {
+              block.style.cssText = `
+                background: #f7fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 12px;
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-size: 13px;
+                line-height: 1.4;
+                overflow-x: auto;
+              `
+            })
+            // 优化行内代码样式
+            const inlineCodes = messageContent.querySelectorAll('code:not(pre code)')
+            inlineCodes.forEach((code) => {
+              code.style.cssText = `
+                background: #f7fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                padding: 2px 6px;
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-size: 12px;
+                color: #e53e3e;
+              `
+            })
+          } catch (error) {
+            console.error('❌ Markdown 渲染失败:', error)
+            messageContent.textContent = content // Fallback
+          }
         } else {
-          messageContent.textContent = content // Fallback
+          console.warn('⚠️ marked.js 未加载，尝试重新加载...')
+          // 尝试重新加载 marked.js
+          loadMarkedScript()
+            .then(() => {
+              if (typeof window.marked === 'function') {
+                console.log('✅ marked.js 重新加载成功，正在渲染 markdown')
+                try {
+                  messageContent.innerHTML = window.marked(content)
+                  // 重新应用样式
+                  const codeBlocks = messageContent.querySelectorAll('pre code')
+                  codeBlocks.forEach((block) => {
+                    block.style.cssText = `
+                    background: #f7fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 12px;
+                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                    font-size: 13px;
+                    line-height: 1.4;
+                    overflow-x: auto;
+                  `
+                  })
+                  const inlineCodes = messageContent.querySelectorAll('code:not(pre code)')
+                  inlineCodes.forEach((code) => {
+                    code.style.cssText = `
+                    background: #f7fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    padding: 2px 6px;
+                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                    font-size: 12px;
+                    color: #e53e3e;
+                  `
+                  })
+                } catch (error) {
+                  console.error('❌ Markdown 重新渲染失败:', error)
+                  messageContent.textContent = content // Fallback
+                }
+              } else {
+                console.error('❌ marked.js 重新加载失败，使用纯文本显示')
+                messageContent.textContent = content // Fallback
+              }
+            })
+            .catch((error) => {
+              console.error('❌ marked.js 重新加载出错:', error)
+              messageContent.textContent = content // Fallback
+            })
+          // 临时显示纯文本，等待重新加载完成
+          messageContent.textContent = content
         }
       }
 
@@ -1399,7 +1589,7 @@
 
       // 清空输入框并重置高度
       input.value = ''
-      input.style.height = '36px'
+      input.style.height = '40px'
       input.style.overflowY = 'hidden'
 
       // 设置响应状态
@@ -1433,10 +1623,36 @@
         // 流式渲染回复
         await streamAIResponse(conversationHistory, (chunk) => {
           fullResponse += chunk
+          // 确保 marked.js 已加载后再进行 markdown 渲染
           if (typeof window.marked === 'function') {
-            aiMessageContent.innerHTML = window.marked(fullResponse)
+            try {
+              aiMessageContent.innerHTML = window.marked(fullResponse)
+            } catch (error) {
+              console.error('❌ 流式渲染 Markdown 失败:', error)
+              aiMessageContent.textContent = fullResponse
+            }
           } else {
-            aiMessageContent.textContent = fullResponse
+            // 如果 marked.js 未加载，尝试重新加载
+            console.log('⚠️ marked.js 未加载，尝试重新加载...')
+            loadMarkedScript()
+              .then(() => {
+                if (typeof window.marked === 'function') {
+                  try {
+                    aiMessageContent.innerHTML = window.marked(fullResponse)
+                    console.log('✅ marked.js 重新加载成功，Markdown 渲染完成')
+                  } catch (error) {
+                    console.error('❌ 重新加载后 Markdown 渲染失败:', error)
+                    aiMessageContent.textContent = fullResponse
+                  }
+                } else {
+                  console.error('❌ marked.js 重新加载失败，使用纯文本显示')
+                  aiMessageContent.textContent = fullResponse
+                }
+              })
+              .catch((error) => {
+                console.error('❌ 重新加载 marked.js 失败:', error)
+                aiMessageContent.textContent = fullResponse
+              })
           }
           // 自动滚动到底部
           messagesContainer.scrollTop = messagesContainer.scrollHeight
@@ -1475,9 +1691,9 @@
     }
 
     // 输入框事件
-    input.addEventListener('input', () => {
+    const inputHandler = () => {
       // 自动调整高度
-      input.style.height = '36px'
+      input.style.height = '40px'
       const newHeight = Math.min(input.scrollHeight, 120)
       input.style.height = newHeight + 'px'
 
@@ -1487,22 +1703,25 @@
       } else {
         input.style.overflowY = 'hidden'
       }
-    })
+    }
 
-    input.addEventListener('keydown', (e) => {
+    const keydownHandler = (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         sendMessage()
       }
-    })
+    }
+
+    globalResourceManager.addListener(input, 'input', inputHandler)
+    globalResourceManager.addListener(input, 'keydown', keydownHandler)
 
     // 发送按钮事件
-    sendBtn.addEventListener('click', sendMessage)
+    globalResourceManager.addListener(sendBtn, 'click', sendMessage)
 
     // 总结按钮事件
     const summarizeBtn = sidebar.querySelector('#ai-summarize-btn')
     if (summarizeBtn) {
-      summarizeBtn.addEventListener('click', summarizePage)
+      globalResourceManager.addListener(summarizeBtn, 'click', summarizePage)
     }
 
     // 总结页面功能
@@ -1568,10 +1787,36 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
         // 流式渲染回复
         await streamAIResponse(conversationHistory, (chunk) => {
           fullResponse += chunk
+          // 确保 marked.js 已加载后再进行 markdown 渲染
           if (typeof window.marked === 'function') {
-            aiMessageContent.innerHTML = window.marked(fullResponse)
+            try {
+              aiMessageContent.innerHTML = window.marked(fullResponse)
+            } catch (error) {
+              console.error('❌ 流式渲染 Markdown 失败:', error)
+              aiMessageContent.textContent = fullResponse
+            }
           } else {
-            aiMessageContent.textContent = fullResponse
+            // 如果 marked.js 未加载，尝试重新加载
+            console.log('⚠️ marked.js 未加载，尝试重新加载...')
+            loadMarkedScript()
+              .then(() => {
+                if (typeof window.marked === 'function') {
+                  try {
+                    aiMessageContent.innerHTML = window.marked(fullResponse)
+                    console.log('✅ marked.js 重新加载成功，Markdown 渲染完成')
+                  } catch (error) {
+                    console.error('❌ 重新加载后 Markdown 渲染失败:', error)
+                    aiMessageContent.textContent = fullResponse
+                  }
+                } else {
+                  console.error('❌ marked.js 重新加载失败，使用纯文本显示')
+                  aiMessageContent.textContent = fullResponse
+                }
+              })
+              .catch((error) => {
+                console.error('❌ 重新加载 marked.js 失败:', error)
+                aiMessageContent.textContent = fullResponse
+              })
           }
           // 自动滚动到底部
           messagesContainer.scrollTop = messagesContainer.scrollHeight
@@ -1993,7 +2238,7 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
 
   // 监听来自扩展的消息
   if (typeof chrome !== 'undefined' && chrome.runtime) {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const messageHandler = (message, sender, sendResponse) => {
       if (message.type === 'EXTRACT_PAGE_CONTENT') {
         const content = extractPageContent()
         if (content) {
@@ -2011,28 +2256,187 @@ ${pageContent.structure.headings.map((h) => `${'  '.repeat(h.level - 1)}- ${h.te
         }
       }
       return true
+    }
+
+    chrome.runtime.onMessage.addListener(messageHandler)
+
+    // 将监听器添加到资源管理器
+    globalResourceManager.listeners.add({
+      element: chrome.runtime.onMessage,
+      event: 'message',
+      handler: messageHandler,
+      cleanup: () => chrome.runtime.onMessage.removeListener(messageHandler),
     })
   }
 
+  // 全局资源管理器
+  const globalResourceManager = {
+    timers: new Set(),
+    listeners: new Set(),
+    observers: new Set(),
+    intervals: new Set(),
+
+    // 添加定时器
+    addTimer(timerId) {
+      this.timers.add(timerId)
+    },
+
+    // 添加事件监听器
+    addListener(element, event, handler, options) {
+      const listenerInfo = { element, event, handler, options }
+      this.listeners.add(listenerInfo)
+      element.addEventListener(event, handler, options)
+      return listenerInfo
+    },
+
+    // 添加观察者
+    addObserver(observer) {
+      this.observers.add(observer)
+    },
+
+    // 添加间隔定时器
+    addInterval(intervalId) {
+      this.intervals.add(intervalId)
+    },
+
+    // 清理所有资源
+    cleanup() {
+      console.log('🧹 开始清理全局资源...')
+
+      // 清理定时器
+      this.timers.forEach((timerId) => {
+        clearTimeout(timerId)
+      })
+      this.timers.clear()
+
+      // 清理间隔定时器
+      this.intervals.forEach((intervalId) => {
+        clearInterval(intervalId)
+      })
+      this.intervals.clear()
+
+      // 清理事件监听器
+      this.listeners.forEach((listenerInfo) => {
+        try {
+          if (listenerInfo.cleanup) {
+            // 使用自定义清理函数（如 Chrome API 监听器）
+            listenerInfo.cleanup()
+          } else {
+            // 标准 DOM 事件监听器
+            const { element, event, handler, options } = listenerInfo
+            element.removeEventListener(event, handler, options)
+          }
+        } catch (error) {
+          console.warn('清理事件监听器失败:', error)
+        }
+      })
+      this.listeners.clear()
+
+      // 清理观察者
+      this.observers.forEach((observer) => {
+        try {
+          if (observer.disconnect) {
+            observer.disconnect()
+          }
+        } catch (error) {
+          console.warn('清理观察者失败:', error)
+        }
+      })
+      this.observers.clear()
+
+      console.log('✅ 全局资源清理完成')
+    },
+
+    // 获取资源统计
+    getStats() {
+      return {
+        timers: this.timers.size,
+        listeners: this.listeners.size,
+        observers: this.observers.size,
+        intervals: this.intervals.size,
+      }
+    },
+  }
+
   // 页面卸载时清理资源
-  window.addEventListener('beforeunload', () => {
+  const beforeUnloadHandler = () => {
+    console.log('🔄 页面即将卸载，开始清理资源...')
+
+    // 清理全局资源管理器
+    globalResourceManager.cleanup()
+
+    // 清理 QuickCopyButton 实例
+    if (window.quickCopyButton && typeof window.quickCopyButton.destroy === 'function') {
+      window.quickCopyButton.destroy()
+    }
+
+    // 清理 AI 助手相关资源
+    const sidebar = document.getElementById('ai-sider-nav-sidebar')
+    const triggerButton = document.getElementById('ai-sider-nav-trigger')
+
+    if (sidebar) {
+      sidebar.remove()
+    }
+    if (triggerButton) {
+      triggerButton.remove()
+    }
+
     // 清理可能的内存引用
     if (typeof gc === 'function') {
       gc() // 如果可用，触发垃圾回收
     }
-  })
 
-  // 定期清理内存（每5分钟）
-  setInterval(() => {
-    // 清理可能的内存泄露
-    if (document.querySelectorAll('*').length > 10000) {
-      console.warn('⚠️ 检测到大量DOM节点，可能存在内存泄露')
+    console.log('✅ 页面卸载清理完成')
+  }
+
+  globalResourceManager.addListener(window, 'beforeunload', beforeUnloadHandler)
+
+  // 定期清理内存和检查资源使用（每5分钟）
+  const memoryCheckInterval = setInterval(() => {
+    const domNodeCount = document.querySelectorAll('*').length
+    const resourceStats = globalResourceManager.getStats()
+
+    console.log('📊 内存检查:', {
+      domNodes: domNodeCount,
+      resources: resourceStats,
+    })
+
+    // 检查DOM节点数量
+    if (domNodeCount > 10000) {
+      console.warn('⚠️ 检测到大量DOM节点，可能存在内存泄露', domNodeCount)
+    }
+
+    // 检查资源数量
+    const totalResources = Object.values(resourceStats).reduce((sum, count) => sum + count, 0)
+    if (totalResources > 100) {
+      console.warn('⚠️ 检测到大量未清理资源:', resourceStats)
+    }
+
+    // 如果内存压力过大，执行清理
+    if (domNodeCount > 15000 || totalResources > 200) {
+      console.log('🧹 执行紧急内存清理...')
+
+      // 清理过期的缓存
+      if (
+        window.cacheManager &&
+        typeof window.cacheManager.performAggressiveCleanup === 'function'
+      ) {
+        window.cacheManager.performAggressiveCleanup()
+      }
+
+      // 触发垃圾回收
+      if (typeof gc === 'function') {
+        gc()
+      }
     }
   }, 300000)
 
+  // 将内存检查间隔定时器添加到资源管理器
+  globalResourceManager.addInterval(memoryCheckInterval)
+
   // 等待 DOM 加载完成
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init)
+    globalResourceManager.addListener(document, 'DOMContentLoaded', init)
   } else {
     init()
   }

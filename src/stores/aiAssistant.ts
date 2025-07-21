@@ -40,7 +40,7 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       ctrlKey: true,
       altKey: false,
       shiftKey: false,
-      metaKey: false,
+      metaKey: true, // 支持 Command+K (Mac) 和 Ctrl+K (Windows/Linux)
     },
     newChat: {
       key: 'n',
@@ -219,32 +219,85 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     currentSessionId.value = null
   }
 
-  // 清理旧消息（保留最近的消息）
-  const cleanupSessionMessages = (sessionId: string) => {
+  // 限制单个会话的消息数量（更严格的实时限制）
+  const limitSessionMessages = (sessionId: string) => {
     const session = chatSessions.value.find((s) => s.id === sessionId)
     if (!session) return
 
     const limits = getSessionLimits()
-    if (session.messages.length > limits.messageCleanupThreshold) {
+    const maxMessages = limits.maxMessagesPerSession
+
+    if (session.messages.length > maxMessages) {
       // 保留最近的消息，删除旧消息
-      const keepCount = limits.maxMessagesPerSession
-      session.messages = session.messages.slice(-keepCount)
+      const removedCount = session.messages.length - maxMessages
+      session.messages = session.messages.slice(-maxMessages)
       session.updatedAt = Date.now()
-      console.log(`清理会话 ${sessionId} 的旧消息，保留最近 ${keepCount} 条`)
+      console.log(
+        `限制会话 ${sessionId} 消息数量，删除了 ${removedCount} 条旧消息，保留最近 ${maxMessages} 条`
+      )
     }
   }
 
-  // 自动清理旧会话
+  // 限制总消息数量（防止内存无限增长）
+  const limitTotalMessages = () => {
+    const limits = getSessionLimits()
+    const maxTotalMessages = limits.maxSessions * limits.maxMessagesPerSession * 0.8 // 80% 的理论最大值
+
+    const totalMessages = chatSessions.value.reduce(
+      (sum, session) => sum + session.messages.length,
+      0
+    )
+
+    if (totalMessages > maxTotalMessages) {
+      console.log(`总消息数量 ${totalMessages} 超过限制 ${maxTotalMessages}，开始清理`)
+
+      // 按更新时间排序，从最旧的会话开始清理
+      const sortedSessions = [...chatSessions.value].sort((a, b) => a.updatedAt - b.updatedAt)
+
+      let messagesToRemove = totalMessages - maxTotalMessages
+
+      for (const session of sortedSessions) {
+        if (messagesToRemove <= 0) break
+
+        const currentCount = session.messages.length
+        const minKeep = Math.max(5, Math.floor(limits.maxMessagesPerSession * 0.3)) // 至少保留 30% 或 5 条
+        const canRemove = Math.max(0, currentCount - minKeep)
+        const removeCount = Math.min(messagesToRemove, canRemove)
+
+        if (removeCount > 0) {
+          session.messages = session.messages.slice(removeCount)
+          session.updatedAt = Date.now()
+          messagesToRemove -= removeCount
+          console.log(`从会话 ${session.id} 清理了 ${removeCount} 条消息`)
+        }
+      }
+    }
+  }
+
+  // 清理旧消息（保留最近的消息）- 保持向后兼容
+  // const cleanupSessionMessages = (sessionId: string) => {
+  //   limitSessionMessages(sessionId)
+  // }
+
+  // 自动清理旧会话（更严格的限制）
   const autoCleanupSessions = () => {
     const limits = getSessionLimits()
-    if (chatSessions.value.length > limits.autoCleanupThreshold) {
+    const maxSessions = limits.maxSessions
+
+    if (chatSessions.value.length > maxSessions) {
       // 按更新时间排序，删除最旧的会话
       const sortedSessions = [...chatSessions.value].sort((a, b) => b.updatedAt - a.updatedAt)
-      const keepCount = limits.maxSessions
-      const sessionsToKeep = sortedSessions.slice(0, keepCount)
+      const sessionsToKeep = sortedSessions.slice(0, maxSessions)
+      const removedCount = chatSessions.value.length - maxSessions
+
+      // 如果当前会话被删除，切换到最新的会话
+      const keptSessionIds = new Set(sessionsToKeep.map((s) => s.id))
+      if (currentSessionId.value && !keptSessionIds.has(currentSessionId.value)) {
+        currentSessionId.value = sessionsToKeep.length > 0 ? sessionsToKeep[0].id : null
+      }
 
       chatSessions.value = sessionsToKeep
-      console.log(`自动清理旧会话，保留最近 ${keepCount} 个会话`)
+      console.log(`自动清理了 ${removedCount} 个旧会话，保留最近 ${maxSessions} 个会话`)
     }
   }
 
@@ -272,11 +325,17 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       session.title = generateChatTitle(message.content)
     }
 
-    // 检查是否需要清理消息
-    cleanupSessionMessages(session.id)
+    // 立即检查并限制消息数量（更严格的限制）
+    limitSessionMessages(session.id)
+
+    // 检查总消息数量限制
+    limitTotalMessages()
 
     // 检查是否需要清理会话
     autoCleanupSessions()
+
+    // 自动保存会话（防止数据丢失）
+    saveSessions()
 
     return messageId
   }
@@ -384,9 +443,43 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
 
   const saveSessions = async () => {
     try {
+      // 在保存前再次确保数据大小限制
+      const limits = getSessionLimits()
+
+      // 限制会话数量
+      if (chatSessions.value.length > limits.maxSessions) {
+        autoCleanupSessions()
+      }
+
+      // 限制每个会话的消息数量
+      chatSessions.value.forEach((session) => {
+        if (session.messages.length > limits.maxMessagesPerSession) {
+          limitSessionMessages(session.id)
+        }
+      })
+
       const data = {
         sessions: chatSessions.value,
         currentSessionId: currentSessionId.value,
+        lastCleanup: Date.now(), // 记录最后清理时间
+      }
+
+      // 估算数据大小（简单估算）
+      const dataSize = JSON.stringify(data).length
+      const maxSize = 5 * 1024 * 1024 // 5MB 限制
+
+      if (dataSize > maxSize) {
+        console.warn(`会话数据过大 (${Math.round(dataSize / 1024 / 1024)}MB)，执行强制清理`)
+        // 强制清理：只保留一半的会话和消息
+        chatSessions.value = chatSessions.value
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .slice(0, Math.floor(limits.maxSessions / 2))
+          .map((session) => ({
+            ...session,
+            messages: session.messages.slice(-Math.floor(limits.maxMessagesPerSession / 2)),
+          }))
+
+        data.sessions = chatSessions.value
       }
 
       if (typeof chrome !== 'undefined' && chrome.storage) {
@@ -396,6 +489,12 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       }
     } catch (error) {
       console.error('保存聊天会话失败:', error)
+
+      // 如果保存失败，可能是数据过大，尝试紧急清理
+      if (error instanceof Error && error.message.includes('quota')) {
+        console.warn('存储配额不足，执行紧急清理')
+        emergencyCleanup()
+      }
     }
   }
 
@@ -584,6 +683,43 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     }
   }
 
+  // 紧急清理（当存储空间不足时）
+  const emergencyCleanup = async () => {
+    console.warn('执行紧急清理...')
+
+    // 只保留当前会话和最近的 2 个会话
+    const currentSession = currentSession.value
+    const recentSessions = chatSessions.value.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3)
+
+    // 确保当前会话被保留
+    const sessionsToKeep = currentSession
+      ? [currentSession, ...recentSessions.filter((s) => s.id !== currentSession.id)].slice(0, 3)
+      : recentSessions
+
+    // 每个会话只保留最近 10 条消息
+    chatSessions.value = sessionsToKeep.map((session) => ({
+      ...session,
+      messages: session.messages.slice(-10),
+    }))
+
+    // 清理响应状态
+    responseState.value.currentResponse = ''
+    responseState.value.thinkingContent = ''
+    responseState.value.error = null
+
+    // 清理总结状态
+    clearSummary()
+
+    console.log(`紧急清理完成，保留 ${chatSessions.value.length} 个会话`)
+
+    // 尝试重新保存
+    try {
+      await saveSessions()
+    } catch (error) {
+      console.error('紧急清理后仍无法保存:', error)
+    }
+  }
+
   // 清理所有监听器和资源
   const cleanup = () => {
     // 清理消息监听器
@@ -591,6 +727,11 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
       messageListenerCleanup()
       messageListenerCleanup = null
     }
+
+    // 清理状态数据
+    responseState.value.currentResponse = ''
+    responseState.value.thinkingContent = ''
+    clearSummary()
   }
 
   return {
@@ -626,6 +767,9 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     addMessage,
     updateMessage,
     deleteMessage,
+    limitSessionMessages,
+    limitTotalMessages,
+    emergencyCleanup,
 
     // 响应状态操作
     setResponseLoading,

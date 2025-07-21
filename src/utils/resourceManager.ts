@@ -24,11 +24,154 @@ export interface ListenerInfo {
 }
 
 class ResourceManager {
+  // 映射表大小限制
+  private readonly MAX_TIMERS = 1000
+  private readonly MAX_LISTENERS = 2000
+  private readonly MAX_OBSERVERS = 500
+  private readonly MAX_CLEANUP_FUNCTIONS = 200
+
+  // 资源过期时间（30分钟）
+  private readonly RESOURCE_EXPIRY_TIME = 30 * 60 * 1000
+
+  // 清理间隔（5分钟）
+  private readonly CLEANUP_INTERVAL = 5 * 60 * 1000
+
   private timers = new Map<number, TimerInfo>()
   private listeners = new Map<string, ListenerInfo>()
   private observers = new Set<any>()
   private cleanupFunctions = new Set<ResourceCleanup>()
   private isDestroyed = false
+  private cleanupTimer: number | null = null
+  private lastCleanupTime = 0
+
+  constructor() {
+    this.setupPeriodicCleanup()
+  }
+
+  /**
+   * 设置定期清理
+   */
+  private setupPeriodicCleanup(): void {
+    if (this.cleanupTimer) return
+
+    this.cleanupTimer = window.setInterval(() => {
+      this.performPeriodicCleanup()
+    }, this.CLEANUP_INTERVAL)
+  }
+
+  /**
+   * 执行定期清理
+   */
+  private performPeriodicCleanup(): void {
+    const now = Date.now()
+
+    // 避免频繁清理
+    if (now - this.lastCleanupTime < this.CLEANUP_INTERVAL / 2) {
+      return
+    }
+
+    this.cleanupExpiredResources()
+    this.enforceResourceLimits()
+    this.lastCleanupTime = now
+  }
+
+  /**
+   * 清理过期资源
+   */
+  private cleanupExpiredResources(): void {
+    const now = Date.now()
+    let cleanedCount = 0
+
+    // 清理过期的事件监听器
+    for (const [id, listener] of this.listeners.entries()) {
+      if (now - listener.createdAt > this.RESOURCE_EXPIRY_TIME) {
+        this.removeEventListener(id)
+        cleanedCount++
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(`🧹 清理了 ${cleanedCount} 个过期资源`)
+    }
+  }
+
+  /**
+   * 强制执行资源限制
+   */
+  private enforceResourceLimits(): void {
+    // 限制定时器数量
+    if (this.timers.size > this.MAX_TIMERS) {
+      const excess = this.timers.size - this.MAX_TIMERS
+      const oldestTimers = Array.from(this.timers.entries())
+        .sort(([, a], [, b]) => a.createdAt - b.createdAt)
+        .slice(0, excess)
+
+      oldestTimers.forEach(([id]) => this.clearTimer(id))
+      console.warn(`⚠️ 清理了 ${excess} 个最旧的定时器以控制内存使用`)
+    }
+
+    // 限制事件监听器数量
+    if (this.listeners.size > this.MAX_LISTENERS) {
+      const excess = this.listeners.size - this.MAX_LISTENERS
+      const oldestListeners = Array.from(this.listeners.entries())
+        .sort(([, a], [, b]) => a.createdAt - b.createdAt)
+        .slice(0, excess)
+
+      oldestListeners.forEach(([id]) => this.removeEventListener(id))
+      console.warn(`⚠️ 清理了 ${excess} 个最旧的事件监听器以控制内存使用`)
+    }
+
+    // 限制观察者数量
+    if (this.observers.size > this.MAX_OBSERVERS) {
+      const excess = this.observers.size - this.MAX_OBSERVERS
+      const observersArray = Array.from(this.observers)
+      const toRemove = observersArray.slice(0, excess)
+
+      toRemove.forEach((observer) => this.removeObserver(observer))
+      console.warn(`⚠️ 清理了 ${excess} 个观察者以控制内存使用`)
+    }
+
+    // 限制清理函数数量
+    if (this.cleanupFunctions.size > this.MAX_CLEANUP_FUNCTIONS) {
+      const excess = this.cleanupFunctions.size - this.MAX_CLEANUP_FUNCTIONS
+      const functionsArray = Array.from(this.cleanupFunctions)
+      const toRemove = functionsArray.slice(0, excess)
+
+      toRemove.forEach((fn) => this.cleanupFunctions.delete(fn))
+      console.warn(`⚠️ 清理了 ${excess} 个清理函数以控制内存使用`)
+    }
+  }
+
+  /**
+   * 检查资源使用情况
+   */
+  checkResourceUsage(): {
+    timers: { current: number; max: number; usage: number }
+    listeners: { current: number; max: number; usage: number }
+    observers: { current: number; max: number; usage: number }
+    cleanupFunctions: { current: number; max: number; usage: number }
+    memoryPressure: boolean
+  } {
+    const timersUsage = (this.timers.size / this.MAX_TIMERS) * 100
+    const listenersUsage = (this.listeners.size / this.MAX_LISTENERS) * 100
+    const observersUsage = (this.observers.size / this.MAX_OBSERVERS) * 100
+    const cleanupUsage = (this.cleanupFunctions.size / this.MAX_CLEANUP_FUNCTIONS) * 100
+
+    const memoryPressure =
+      timersUsage > 80 || listenersUsage > 80 || observersUsage > 80 || cleanupUsage > 80
+
+    return {
+      timers: { current: this.timers.size, max: this.MAX_TIMERS, usage: timersUsage },
+      listeners: { current: this.listeners.size, max: this.MAX_LISTENERS, usage: listenersUsage },
+      observers: { current: this.observers.size, max: this.MAX_OBSERVERS, usage: observersUsage },
+      cleanupFunctions: {
+        current: this.cleanupFunctions.size,
+        max: this.MAX_CLEANUP_FUNCTIONS,
+        usage: cleanupUsage,
+      },
+      memoryPressure,
+    }
+  }
 
   /**
    * 创建安全的定时器
@@ -37,6 +180,11 @@ class ResourceManager {
     if (this.isDestroyed) {
       console.warn('ResourceManager 已销毁，无法创建新的定时器')
       return -1
+    }
+
+    // 检查是否需要清理
+    if (this.timers.size >= this.MAX_TIMERS) {
+      this.enforceResourceLimits()
     }
 
     const timerId = window.setTimeout(() => {
@@ -62,6 +210,11 @@ class ResourceManager {
     if (this.isDestroyed) {
       console.warn('ResourceManager 已销毁，无法创建新的定时器')
       return -1
+    }
+
+    // 检查是否需要清理
+    if (this.timers.size >= this.MAX_TIMERS) {
+      this.enforceResourceLimits()
     }
 
     const timerId = window.setInterval(callback, interval)
@@ -106,6 +259,11 @@ class ResourceManager {
       return ''
     }
 
+    // 检查是否需要清理
+    if (this.listeners.size >= this.MAX_LISTENERS) {
+      this.enforceResourceLimits()
+    }
+
     const listenerId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     target.addEventListener(type, listener, options)
@@ -145,6 +303,11 @@ class ResourceManager {
       return
     }
 
+    // 检查是否需要清理
+    if (this.observers.size >= this.MAX_OBSERVERS) {
+      this.enforceResourceLimits()
+    }
+
     this.observers.add(observer)
   }
 
@@ -165,6 +328,11 @@ class ResourceManager {
     if (this.isDestroyed) {
       console.warn('ResourceManager 已销毁，无法添加新的清理函数')
       return
+    }
+
+    // 检查是否需要清理
+    if (this.cleanupFunctions.size >= this.MAX_CLEANUP_FUNCTIONS) {
+      this.enforceResourceLimits()
     }
 
     this.cleanupFunctions.add(cleanup)
@@ -230,12 +398,44 @@ class ResourceManager {
   }
 
   /**
+   * 强制清理所有资源
+   */
+  forceCleanup(): void {
+    console.log('🚨 强制清理所有资源')
+    this.cleanupExpiredResources()
+    this.enforceResourceLimits()
+
+    // 如果仍然有太多资源，进行更激进的清理
+    const usage = this.checkResourceUsage()
+    if (usage.memoryPressure) {
+      console.warn('⚠️ 内存压力过大，执行激进清理')
+
+      // 清理一半的资源
+      const timersToRemove = Math.floor(this.timers.size / 2)
+      const listenersToRemove = Math.floor(this.listeners.size / 2)
+
+      Array.from(this.timers.keys())
+        .slice(0, timersToRemove)
+        .forEach((id) => this.clearTimer(id))
+      Array.from(this.listeners.keys())
+        .slice(0, listenersToRemove)
+        .forEach((id) => this.removeEventListener(id))
+    }
+  }
+
+  /**
    * 清理所有资源
    */
   cleanup() {
     if (this.isDestroyed) return
 
     console.log('🧹 开始清理资源管理器')
+
+    // 停止定期清理
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
 
     // 清理定时器
     this.timers.forEach((timerInfo, timerId) => {
@@ -249,18 +449,26 @@ class ResourceManager {
 
     // 清理事件监听器
     this.listeners.forEach((listenerInfo) => {
-      listenerInfo.target.removeEventListener(
-        listenerInfo.type,
-        listenerInfo.listener,
-        listenerInfo.options
-      )
+      try {
+        listenerInfo.target.removeEventListener(
+          listenerInfo.type,
+          listenerInfo.listener,
+          listenerInfo.options
+        )
+      } catch (error) {
+        console.warn('移除事件监听器失败:', error)
+      }
     })
     this.listeners.clear()
 
     // 清理观察者
     this.observers.forEach((observer) => {
-      if (observer && typeof observer.disconnect === 'function') {
-        observer.disconnect()
+      try {
+        if (observer && typeof observer.disconnect === 'function') {
+          observer.disconnect()
+        }
+      } catch (error) {
+        console.warn('断开观察者失败:', error)
       }
     })
     this.observers.clear()
@@ -285,6 +493,8 @@ class ResourceManager {
   reset() {
     this.cleanup()
     this.isDestroyed = false
+    this.lastCleanupTime = 0
+    this.setupPeriodicCleanup()
   }
 }
 
