@@ -235,7 +235,7 @@ class CacheManager {
    */
   clear(): void {
     this.memoryCache.clear()
-    this.cacheStats = { hits: 0, misses: 0, evictions: 0 }
+    this.cacheStats = { hits: 0, misses: 0, evictions: 0, compressions: 0, memoryPressureEvents: 0 }
   }
 
   /**

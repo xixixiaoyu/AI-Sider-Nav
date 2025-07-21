@@ -32,7 +32,7 @@ export interface SummaryMetadata {
  */
 export class SummaryService {
   // 内容大小限制
-  private readonly MAX_CONTENT_SIZE = 300 * 1024 // 300KB
+  // private readonly MAX_CONTENT_SIZE = 300 * 1024 // 300KB
   private readonly MAX_PROMPT_LENGTH = 50000 // 50K 字符
   private readonly MAX_IMAGES = 5
   private readonly MAX_TABLES = 3

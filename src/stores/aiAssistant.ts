@@ -688,12 +688,12 @@ export const useAIAssistantStore = defineStore('aiAssistant', () => {
     console.warn('执行紧急清理...')
 
     // 只保留当前会话和最近的 2 个会话
-    const currentSession = currentSession.value
+    const activeSession = currentSession.value
     const recentSessions = chatSessions.value.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3)
 
     // 确保当前会话被保留
-    const sessionsToKeep = currentSession
-      ? [currentSession, ...recentSessions.filter((s) => s.id !== currentSession.id)].slice(0, 3)
+    const sessionsToKeep = activeSession
+      ? [activeSession, ...recentSessions.filter((s) => s.id !== activeSession.id)].slice(0, 3)
       : recentSessions
 
     // 每个会话只保留最近 10 条消息
