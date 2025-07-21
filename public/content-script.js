@@ -530,7 +530,19 @@
     return button
   }
 
-  // 创建侧边栏
+  // 加载调试工具
+  function loadDebugTools() {
+    if (!window.debugApiKey) {
+      const script = document.createElement('script')
+      script.src = chrome.runtime.getURL('scripts/debug-api-key.js')
+      script.onload = () => {
+        console.log('🔧 API Key 调试工具已加载，使用 debugApiKey.runDiagnostics() 进行诊断')
+      }
+      document.head.appendChild(script)
+    }
+  }
+
+  // 创建并注入侧边栏
   function createSidebar() {
     const sidebar = document.createElement('div')
     sidebar.id = 'ai-sider-nav-sidebar'
@@ -754,6 +766,7 @@
             placeholder="输入你的问题..."
             style="
               flex: 1;
+              height: 40px;
               min-height: 40px;
               max-height: 120px;
               padding: 10px 12px;
@@ -764,7 +777,8 @@
               font-size: 14px;
               line-height: 1.4;
               outline: none;
-              transition: border-color 0.2s ease;
+              transition: all 0.2s ease;
+              overflow-y: hidden;
             "
           ></textarea>
           <button
@@ -924,6 +938,9 @@
     await loadSettings()
     await loadSidebarWidth()
 
+    // 加载调试工具
+    loadDebugTools()
+
     if (aiAssistantState.settings.enabled && aiAssistantState.settings.globalAccess) {
       createTriggerButton()
       createSidebar()
@@ -947,7 +964,10 @@
       messageDiv.style.cssText = `
         display: flex;
         gap: 12px;
+        margin-bottom: 16px;
+        padding: 0 4px;
         ${isUser ? 'flex-direction: row-reverse;' : ''}
+        animation: messageSlideIn 0.3s ease-out;
       `
       if (!isUser) {
         messageDiv.classList.add('ai-message')
@@ -955,37 +975,74 @@
 
       const avatar = document.createElement('div')
       avatar.style.cssText = `
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
         ${
           isUser
-            ? 'background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;'
-            : 'background: linear-gradient(135deg, #14b8a6, #0d9488); color: white;'
+            ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'
+            : 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'
         }
       `
       avatar.innerHTML = isUser
-        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/></svg>'
-        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+
+      const messageWrapper = document.createElement('div')
+      messageWrapper.style.cssText = `
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        ${isUser ? 'align-items: flex-end;' : 'align-items: flex-start;'}
+        max-width: calc(100% - 48px);
+      `
 
       const messageContent = document.createElement('div')
       messageContent.style.cssText = `
-        flex: 1;
-        padding: 12px 16px;
-        border-radius: 12px;
+        max-width: 85%;
+        padding: 14px 18px;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.6;
         word-wrap: break-word;
+        position: relative;
+        transition: all 0.2s ease;
         ${
           isUser
-            ? 'background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; margin-left: 40px;'
-            : 'background: #f3f4f6; color: #1f2937; margin-right: 40px;'
+            ? `
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              border-radius: 20px 20px 6px 20px;
+              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            `
+            : `
+              background: #ffffff;
+              color: #2d3748;
+              border-radius: 20px 20px 20px 6px;
+              border: 1px solid #e2e8f0;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            `
         }
       `
+
+      // 添加时间戳
+      const timestamp = document.createElement('div')
+      timestamp.style.cssText = `
+        font-size: 11px;
+        color: #a0aec0;
+        margin-top: 4px;
+        ${isUser ? 'text-align: right;' : 'text-align: left;'}
+      `
+      timestamp.textContent = new Date().toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+
       // For user messages, use textContent to prevent XSS.
       // For AI messages, we will use innerHTML to render Markdown.
       if (isUser) {
@@ -993,13 +1050,42 @@
       } else {
         if (typeof window.marked === 'function') {
           messageContent.innerHTML = window.marked(content)
+          // 优化 AI 消息中的代码块样式
+          const codeBlocks = messageContent.querySelectorAll('pre code')
+          codeBlocks.forEach((block) => {
+            block.style.cssText = `
+              background: #f7fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 12px;
+              font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+              font-size: 13px;
+              line-height: 1.4;
+              overflow-x: auto;
+            `
+          })
+          // 优化行内代码样式
+          const inlineCodes = messageContent.querySelectorAll('code:not(pre code)')
+          inlineCodes.forEach((code) => {
+            code.style.cssText = `
+              background: #f7fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 4px;
+              padding: 2px 6px;
+              font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+              font-size: 12px;
+              color: #e53e3e;
+            `
+          })
         } else {
           messageContent.textContent = content // Fallback
         }
       }
 
+      messageWrapper.appendChild(messageContent)
+      messageWrapper.appendChild(timestamp)
       messageDiv.appendChild(avatar)
-      messageDiv.appendChild(messageContent)
+      messageDiv.appendChild(messageWrapper)
 
       // 移除欢迎消息（如果存在）
       const welcomeMsg = messagesContainer.querySelector('div[style*="background: #f0fdfa"]')
@@ -1020,51 +1106,100 @@
       loadingDiv.style.cssText = `
         display: flex;
         gap: 12px;
+        margin-bottom: 16px;
+        padding: 0 4px;
+        animation: messageSlideIn 0.3s ease-out;
       `
 
       const avatar = document.createElement('div')
       avatar.style.cssText = `
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        background: linear-gradient(135deg, #14b8a6, #0d9488);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: avatarPulse 2s ease-in-out infinite;
       `
       avatar.innerHTML =
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+
+      const messageWrapper = document.createElement('div')
+      messageWrapper.style.cssText = `
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: calc(100% - 48px);
+      `
 
       const loadingContent = document.createElement('div')
       loadingContent.style.cssText = `
-        flex: 1;
-        padding: 12px 16px;
-        border-radius: 12px;
+        max-width: 85%;
+        padding: 14px 18px;
+        border-radius: 20px 20px 20px 6px;
         font-size: 14px;
-        line-height: 1.5;
-        background: #f3f4f6;
-        color: #6b7280;
-        margin-right: 40px;
+        line-height: 1.6;
+        background: #ffffff;
+        color: #2d3748;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
+        transition: all 0.2s ease;
       `
       loadingContent.innerHTML = `
         <div style="
           display: flex;
           gap: 4px;
+          align-items: center;
         ">
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #14b8a6; animation: pulse 1.5s ease-in-out infinite;"></div>
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #14b8a6; animation: pulse 1.5s ease-in-out infinite 0.2s;"></div>
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: #14b8a6; animation: pulse 1.5s ease-in-out infinite 0.4s;"></div>
+          <div style="
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            animation: dotPulse 1.4s ease-in-out infinite;
+          "></div>
+          <div style="
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            animation: dotPulse 1.4s ease-in-out infinite 0.2s;
+          "></div>
+          <div style="
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            animation: dotPulse 1.4s ease-in-out infinite 0.4s;
+          "></div>
         </div>
-        <span>AI 正在思考...</span>
+        <span style="color: #718096; font-weight: 500;">AI 正在思考...</span>
       `
 
+      const timestamp = document.createElement('div')
+      timestamp.style.cssText = `
+        font-size: 11px;
+        color: #a0aec0;
+        margin-top: 4px;
+        text-align: left;
+      `
+      timestamp.textContent = new Date().toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+
+      messageWrapper.appendChild(loadingContent)
+      messageWrapper.appendChild(timestamp)
       loadingDiv.appendChild(avatar)
-      loadingDiv.appendChild(loadingContent)
+      loadingDiv.appendChild(messageWrapper)
       messagesContainer.appendChild(loadingDiv)
       messagesContainer.scrollTop = messagesContainer.scrollHeight
 
@@ -1088,33 +1223,46 @@
       try {
         console.log('开始获取 API Key...')
 
-        // 通过 background script 获取 API Key
-        if (typeof chrome !== 'undefined' && chrome.runtime) {
+        // 优先从 chrome.storage 直接获取（与主应用保持一致）
+        if (typeof chrome !== 'undefined' && chrome.storage) {
           try {
-            console.log('通过 background script 获取 API Key...')
-
-            const response = await new Promise((resolve, reject) => {
-              chrome.runtime.sendMessage({ type: 'GET_API_KEY' }, (response) => {
-                if (chrome.runtime.lastError) {
-                  reject(new Error(chrome.runtime.lastError.message))
-                } else {
-                  resolve(response)
-                }
-              })
-            })
-
-            if (response && response.apiKey) {
-              console.log('从 background script 获取到 API Key')
-              return response.apiKey
+            console.log('从 chrome.storage 获取 API Key...')
+            const result = await chrome.storage.sync.get('deepseek_api_key')
+            if (result.deepseek_api_key) {
+              console.log('从 chrome.storage 获取到 API Key')
+              return result.deepseek_api_key
             }
+            console.log('chrome.storage 中未找到 API Key')
+          } catch (chromeError) {
+            console.warn(
+              '从 chrome.storage 获取 API Key 失败，尝试 background script:',
+              chromeError
+            )
 
-            console.log('background script 中未找到 API Key')
-          } catch (runtimeError) {
-            console.error('通过 background script 获取 API Key 失败:', runtimeError)
+            // 回退到通过 background script 获取
+            try {
+              console.log('通过 background script 获取 API Key...')
+              const response = await new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({ type: 'GET_API_KEY' }, (response) => {
+                  if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message))
+                  } else {
+                    resolve(response)
+                  }
+                })
+              })
+
+              if (response && response.apiKey) {
+                console.log('从 background script 获取到 API Key')
+                return response.apiKey
+              }
+            } catch (runtimeError) {
+              console.error('通过 background script 获取 API Key 失败:', runtimeError)
+            }
           }
         }
 
-        // 如果 background script 不可用，尝试从 localStorage 获取（降级方案）
+        // 最后尝试从 localStorage 获取（降级方案）
         console.log('尝试从 localStorage 获取 API Key...')
         const localApiKey = localStorage.getItem('deepseek_api_key')
         console.log('localStorage 结果:', localApiKey ? '找到 API Key' : '未找到 API Key')
@@ -1177,7 +1325,9 @@
         } catch (debugError) {
           console.error('streamAIResponse: 调试信息获取失败:', debugError)
         }
-        throw new Error('请先在设置中配置 DeepSeek API Key')
+        throw new Error(
+          '❌ 请先在新标签页的 AI 助手设置中配置 DeepSeek API Key，然后刷新页面重试。\n\n💡 提示：\n1. 点击浏览器工具栏的扩展图标打开设置\n2. 或者打开新标签页进入 AI 助手设置\n3. 配置完成后刷新当前页面'
+        )
       }
 
       const response = await fetch(API_URL, {
@@ -1247,9 +1397,10 @@
       addMessage(message, true)
       conversationHistory.push({ role: 'user', content: message })
 
-      // 清空输入框
+      // 清空输入框并重置高度
       input.value = ''
-      input.style.height = '40px'
+      input.style.height = '36px'
+      input.style.overflowY = 'hidden'
 
       // 设置响应状态
       isResponding = true
@@ -1265,7 +1416,7 @@
         if (!apiKey) {
           removeLoadingMessage()
           addMessage(
-            '❌ 请先在新标签页的 AI 助手设置中配置 DeepSeek API Key，然后刷新页面重试。',
+            '❌ 请先在新标签页的 AI 助手设置中配置 DeepSeek API Key，然后刷新页面重试。\n\n💡 提示：\n1. 点击浏览器工具栏的扩展图标打开设置\n2. 或者打开新标签页进入 AI 助手设置\n3. 配置完成后刷新当前页面',
             false
           )
           return
@@ -1298,10 +1449,11 @@
         console.error('AI 响应错误:', error)
 
         let errorMessage = '抱歉，我现在无法回复。请稍后再试。'
-        if (error.message.includes('API Key')) {
-          errorMessage = '❌ API Key 配置错误，请检查设置。'
+        if (error.message.includes('API Key') || error.message.includes('请先在新标签页')) {
+          errorMessage = error.message // 使用完整的错误信息，包含详细提示
         } else if (error.message.includes('401')) {
-          errorMessage = '❌ API Key 无效，请检查设置。'
+          errorMessage =
+            '❌ API Key 无效，请检查设置。\n\n💡 提示：\n1. 确认 API Key 格式正确\n2. 检查 API Key 是否已过期\n3. 重新获取并配置新的 API Key'
         } else if (error.message.includes('429')) {
           errorMessage = '❌ 请求过于频繁，请稍后再试。'
         } else if (error.message.includes('500')) {
@@ -1319,14 +1471,22 @@
 
     // 备用回复函数（当 API 不可用时使用）
     function getFallbackResponse(userMessage) {
-      return `我现在无法连接到 AI 服务。请确保：\n\n1. 已在设置中配置有效的 DeepSeek API Key\n2. 网络连接正常\n3. API 服务可用\n\n你的问题是："${userMessage}"\n\n请稍后重试，或点击上方"打开新标签页"按钮使用完整版 AI 助手。`
+      return `❌ 我现在无法连接到 AI 服务。请确保：\n\n🔑 **API Key 配置**\n1. 点击浏览器工具栏的扩展图标打开设置\n2. 或者打开新标签页进入 AI 助手设置\n3. 配置有效的 DeepSeek API Key\n4. 保存设置后刷新当前页面\n\n🌐 **其他检查项**\n• 网络连接正常\n• API 服务可用\n• 浏览器允许扩展访问此网站\n\n💬 **你的问题：** "${userMessage}"\n\n🔧 **调试工具：** 在控制台运行 \`debugApiKey.runDiagnostics()\` 进行详细诊断\n\n请完成配置后重试，或使用完整版 AI 助手。`
     }
 
     // 输入框事件
     input.addEventListener('input', () => {
       // 自动调整高度
-      input.style.height = '40px'
-      input.style.height = Math.min(input.scrollHeight, 120) + 'px'
+      input.style.height = '36px'
+      const newHeight = Math.min(input.scrollHeight, 120)
+      input.style.height = newHeight + 'px'
+
+      // 如果内容超过一行，显示滚动条
+      if (input.scrollHeight > 120) {
+        input.style.overflowY = 'auto'
+      } else {
+        input.style.overflowY = 'hidden'
+      }
     })
 
     input.addEventListener('keydown', (e) => {

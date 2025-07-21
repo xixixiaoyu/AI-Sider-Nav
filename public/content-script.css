@@ -115,3 +115,112 @@
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
+
+/* 对话消息动画效果 */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes avatarPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* 消息气泡悬停效果 */
+#ai-sider-nav-sidebar .ai-message:hover {
+  transform: translateY(-1px) !important;
+}
+
+/* 输入框优化 */
+#ai-sider-nav-sidebar #ai-input:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* 发送按钮悬停效果 */
+#ai-sider-nav-sidebar #ai-send-btn:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+#ai-sider-nav-sidebar #ai-send-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* 总结按钮优化 */
+#ai-sider-nav-sidebar #ai-summarize-btn:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* 滚动条样式优化 */
+#ai-sider-nav-sidebar #ai-messages-container::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+#ai-sider-nav-sidebar #ai-messages-container::-webkit-scrollbar-track {
+  background: #f7fafc !important;
+  border-radius: 3px !important;
+}
+
+#ai-sider-nav-sidebar #ai-messages-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 3px !important;
+}
+
+#ai-sider-nav-sidebar #ai-messages-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%) !important;
+}
+
+/* 代码块样式优化 */
+#ai-sider-nav-sidebar pre {
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+#ai-sider-nav-sidebar code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+}
+
+/* 欢迎消息优化 */
+#ai-sider-nav-sidebar div[style*='background: #f0fdfa'] {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  border: 1px solid #bae6fd !important;
+  transition: all 0.3s ease !important;
+}
+
+#ai-sider-nav-sidebar div[style*='background: #f0fdfa']:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+}

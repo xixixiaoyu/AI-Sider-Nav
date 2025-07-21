@@ -17,26 +17,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         break
 
       case 'GET_API_KEY':
-        // 获取 API Key - 支持多种存储格式
+        // 获取 API Key - 支持多种存储格式，优先使用统一键名
         chrome.storage.sync.get(
-          ['aiSiderNavSettings', 'deepseek_api_key', 'deepseekApiKey'],
+          ['deepseek_api_key', 'aiSiderNavSettings', 'deepseekApiKey'],
           (result) => {
             let apiKey = ''
 
-            // 优先从新的统一设置结构中获取
-            if (result.aiSiderNavSettings?.aiAssistant?.apiKey) {
-              apiKey = result.aiSiderNavSettings.aiAssistant.apiKey
-            }
-            // 然后尝试从旧的独立键获取
-            else if (result.deepseek_api_key) {
+            // 优先从统一键名获取（与 configService.ts 保持一致）
+            if (result.deepseek_api_key) {
               apiKey = result.deepseek_api_key
+              console.log('Background: API Key found in deepseek_api_key')
+            }
+            // 然后从新的统一设置结构中获取
+            else if (result.aiSiderNavSettings?.aiAssistant?.apiKey) {
+              apiKey = result.aiSiderNavSettings.aiAssistant.apiKey
+              console.log('Background: API Key found in aiSiderNavSettings')
             }
             // 最后尝试旧版本的键名
             else if (result.deepseekApiKey) {
               apiKey = result.deepseekApiKey
+              console.log('Background: API Key found in deepseekApiKey (legacy)')
             }
 
-            console.log('Background: API Key retrieved:', apiKey ? 'Found' : 'Not found')
+            console.log(
+              'Background: API Key retrieved:',
+              apiKey ? `Found (${apiKey.substring(0, 10)}...)` : 'Not found'
+            )
+            console.log('Background: Storage debug:', {
+              hasDeepseekApiKey: !!result.deepseek_api_key,
+              hasAiSiderNavSettings: !!result.aiSiderNavSettings,
+              hasLegacyKey: !!result.deepseekApiKey,
+            })
             sendResponse({ apiKey })
           }
         )
